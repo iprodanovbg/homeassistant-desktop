@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Home Assistant</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,user-scalable=no">
+    <link href="assets/style.css" rel="stylesheet">
+    <link href="assets/checkmark.css" rel="stylesheet">
+    <script>
+        const {ipcRenderer} = require('electron');
+
+        ipcRenderer.send('ha-instance');
+
+        ipcRenderer.on('ha-instance', function (event, arg) {
+            window.location.href = arg.url
+        });
+
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+            } catch (_) {
+                return false;
+            }
+            return true;
+        }
+
+        function checkUrl() {
+            let url = document.getElementById('url').value;
+            if (!isValidUrl(url)) {
+                return
+            }
+
+            let request = new XMLHttpRequest();
+
+            request.open('GET', url + '/auth/providers', true);
+            request.onreadystatechange = function () {
+                if (request.status === 200) {
+                    document.getElementById('check-wrapper').style.display = 'block';
+                    document.getElementById('url-wrapper').style.display = 'none';
+                    ipcRenderer.send('ha-instance', {url: url, name: JSON.parse(request.responseText)[0].name});
+                    setTimeout(function () {
+                        window.location.href = url
+                    }, 1000)
+                }
+            };
+            request.send();
+        }
+    </script>
+</head>
+
+<body>
+<div class="content">
+    <div class="center header"><img src="assets/favicon.png" height="52"> Home Assistant</div>
+    <div class="center">
+        <p>Please enter your Home Assistant URL in the field below:</p></div>
+    <div class="center">
+        <div id="check-wrapper" class="success-checkmark">
+            <div class="check-icon">
+                <span class="icon-line line-tip"></span>
+                <span class="icon-line line-long"></span>
+                <div class="icon-circle"></div>
+                <div class="icon-fix"></div>
+            </div>
+        </div>
+        <div id="url-wrapper" class="group">
+            <input type="url" required="required" id="url" onkeyup="checkUrl()"/>
+            <span class="highlight"></span>
+            <span class="bar"></span>
+            <label>Home Assistant URL</label>
+        </div>
+    </div>
+    <div class="center">
+        <p><small class="grey">If the entered URL directs to a working Home Assistant instance, you will be forwarded to the login page automatically.</small></p>
+    </div>
+</div>
+</body>
+
+</html>

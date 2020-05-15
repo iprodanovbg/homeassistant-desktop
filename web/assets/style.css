@@ -1,0 +1,101 @@
+body {
+    font-family: Roboto, sans-serif;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    font-weight: 400;
+    margin: 0;
+    padding: 0;
+}
+
+#check-wrapper {
+    display: none;
+    margin-top: 40px;
+    margin-bottom: 10px;
+}
+
+.grey {
+    color: grey;
+}
+
+.content {
+    padding: 20px 16px;
+    margin: 0 auto
+}
+
+.header {
+    font-size: 1.96em;
+    font-weight: 300;
+}
+
+.center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+p {
+    padding-top: 20px;
+    width: 320px;
+}
+
+.header img {
+    margin-right: 16px
+}
+
+.group {
+    position: relative;
+    margin: 45px 0;
+}
+
+input {
+    background: none;
+    font-size: 18px;
+    padding: 10px 0px 10px 0px;
+    display: block;
+    width: 320px;
+    border: none;
+    border-radius: 0;
+    border-bottom: 1px solid #d5d5d5;
+}
+
+input:focus {
+    outline: none;
+}
+
+input:focus ~ label, input:valid ~ label {
+    top: -14px;
+    font-size: 12px;
+    color: #03a9f4;
+}
+
+input:focus ~ .bar:before {
+    width: 320px;
+}
+
+label {
+    color: #d5d5d5;
+    font-size: 16px;
+    font-weight: normal;
+    position: absolute;
+    pointer-events: none;
+    left: 5px;
+    top: 10px;
+    transition: 300ms ease all;
+}
+
+.bar {
+    position: relative;
+    display: block;
+    width: 320px;
+}
+
+.bar:before {
+    content: "";
+    height: 2px;
+    width: 0;
+    bottom: 0px;
+    position: absolute;
+    background: #03a9f4;
+    transition: 300ms ease all;
+    left: 0%;
+}
