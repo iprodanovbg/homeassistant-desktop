@@ -1,7 +1,7 @@
 # Home Assistant - Desktop
 
 Desktop App (Windows / macOS) for [Home Assistant](https://www.home-assistant.io/) built with [Electron](https://www.electronjs.org/)
-
+![Home Assistant - Desktop](https://raw.githubusercontent.com/mrvnklm/homeassistant-desktop/master/media/screenshot.png)
 ## Installation
 Just download the latest version for your platform from the [Releases Section](https://github.com/mrvnklm/homeassistant-desktop/releases) to install Home Assistant
 
@@ -10,7 +10,6 @@ Just download the latest version for your platform from the [Releases Section](h
 - Right-Click to open context menu and change some settings / reset / quit the app
 - Updates are installed automatically if a new version is available (restart required)
 
-Please make sure to update tests as appropriate.
 ## License
 Home Assistant Desktop is open-source and [Apache 2](https://choosealicense.com/licenses/apache-2.0/) licensed
 
