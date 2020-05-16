@@ -1,11 +1,22 @@
-const {app, Menu, Tray, dialog, ipcMain, BrowserWindow, shell} = require('electron');
+const {app, Menu, Tray, dialog, ipcMain, BrowserWindow, shell, screen} = require('electron');
 const {autoUpdater} = require('electron-updater');
 const AutoLaunch = require('auto-launch');
 const Positioner = require('electron-traywindow-positioner');
 const Store = require('electron-store');
 
-if (process.platform === 'darwin') app.dock.hide();
 app.allowRendererProcessReuse = true;
+
+// prevent multiple instances
+if (!app.requestSingleInstanceLock()) {
+    app.quit()
+} else {
+    app.on('second-instance', () => {
+        if (window) showWindow();
+    })
+}
+
+// hide dock icon on macOS
+if (process.platform === 'darwin') app.dock.hide();
 
 const store = new Store();
 const autoLauncher = new AutoLaunch({name: 'Home Assistant Desktop'});
@@ -13,23 +24,22 @@ const autoLauncher = new AutoLaunch({name: 'Home Assistant Desktop'});
 let autostartEnabled = false;
 let forceQuit = false;
 
+if (process.argv[1] === '--squirrel-firstrun') autoLauncher.enable();
+
 const useAutoUpdater = () => {
     autoUpdater.on('error', message => {
         console.error('There was a problem updating the application');
         console.error(message)
     });
-
     autoUpdater.checkForUpdatesAndNotify();
 };
 
 const checkAutoStart = () => {
-    autoLauncher.isEnabled()
-        .then(function (isEnabled) {
-            autostartEnabled = isEnabled
-        })
-        .catch(function (err) {
-            console.log(err)
-        });
+    autoLauncher.isEnabled().then((isEnabled) => {
+        autostartEnabled = isEnabled;
+    }).catch((err) => {
+        console.error(err)
+    });
 };
 
 const getMenu = () => {
@@ -44,15 +54,20 @@ const getMenu = () => {
             type: 'separator'
         },
         {
+            label: 'Hover to Show',
+            type: 'checkbox',
+            checked: !store.get('disableHover'),
+            click: () => {
+                store.set('disableHover', !store.get('disableHover'))
+            }
+        },
+        {
             label: 'Stay on Top',
             type: 'checkbox',
             checked: window.isAlwaysOnTop(),
             click: () => {
                 window.setAlwaysOnTop(!window.isAlwaysOnTop());
-                if (window.isAlwaysOnTop()) {
-                    window.show();
-                    window.focus()
-                }
+                if (window.isAlwaysOnTop()) showWindow();
             }
         },
         {
@@ -60,13 +75,8 @@ const getMenu = () => {
             type: 'checkbox',
             checked: autostartEnabled,
             click: () => {
-                if (autostartEnabled) {
-                    autoLauncher.disable();
-                    autostartEnabled = false
-                } else {
-                    autoLauncher.enable();
-                    autostartEnabled = true
-                }
+                if (autostartEnabled) autoLauncher.disable(); else autoLauncher.enable();
+                checkAutoStart()
             }
         }, {
             type: 'separator'
@@ -94,13 +104,13 @@ const getMenu = () => {
             type: 'separator'
         },
         {
-            label: `v${app.getVersion()} (Auto Update: on)`,
+            label: `v${app.getVersion()} (Auto Update)`,
             enabled: false
         },
         {
-            label: 'Buy me a coffee?',
+            label: 'Open on github.com',
             click: () => {
-                shell.openExternal('https://buymeacoff.ee/mrvnk')
+                shell.openExternal('https://github.com/mrvnklm/homeassistant-desktop')
             }
         },
         {
@@ -142,7 +152,7 @@ const createMainWindow = (show = false) => {
     window = new BrowserWindow({
         width: 420,
         height: 420,
-        show: show,
+        show: false,
         skipTaskbar: true,
         autoHideMenuBar: true,
         frame: !!store.get('detachedMode') && !store.get('hideWindowBar'),
@@ -188,32 +198,74 @@ const createMainWindow = (show = false) => {
             window.hide();
             e.preventDefault()
         }
-    })
+    });
+
+    window.on('blur', () => {
+        if (!store.get('detachedMode') && !window.isAlwaysOnTop()) window.hide();
+    });
+
+    if (show) showWindow();
+};
+
+const showWindow = () => {
+    if (!store.get('detachedMode')) Positioner.position(window, tray.getBounds());
+    if (!window.isVisible()) {
+        window.show();
+        window.focus();
+    }
 };
 
 const createTray = () => {
-    tray = new Tray(process.platform === 'win32' ? `${__dirname}/assets/IconWin.png` : `${__dirname}/assets/Icon.png`);
+        tray = new Tray(process.platform === 'win32' ? `${__dirname}/assets/IconWin.png` : `${__dirname}/assets/Icon.png`);
 
-    tray.on('click', () => {
-        if (window.isVisible()) {
-            window.hide()
+        tray.on('click', () => {
+            if (window.isVisible()) window.hide(); else showWindow();
+        });
+
+        tray.on('right-click', () => {
+            window.hide();
+            tray.popUpContextMenu(getMenu())
+        });
+
+        let timer = undefined;
+
+        tray.on('mouse-move', (e) => {
+                if (store.get('detachedMode') || window.isAlwaysOnTop() || store.get('disableHover')) {
+                    return;
+                }
+                if (!window.isVisible()) {
+                    showWindow();
+                }
+                if (timer) clearTimeout(timer)
+                timer = setTimeout(() => {
+                    let mousePos = screen.getCursorScreenPoint()
+                    let trayBounds = tray.getBounds();
+                    if (!(mousePos.x >= trayBounds.x && mousePos.x <= trayBounds.x + trayBounds.width) || !(mousePos.y >= trayBounds.y && mousePos.y <= trayBounds.y + trayBounds.height)) {
+                        setWindowFocusTimer()
+                    }
+                }, 100);
+            }
+        )
+    }
+;
+
+const setWindowFocusTimer = () => {
+    let timer = setTimeout(() => {
+        let mousePos = screen.getCursorScreenPoint();
+        let windowPosition = window.getPosition();
+        let windowSize = window.getSize();
+        if (!(mousePos.x >= windowPosition[0] && mousePos.x <= windowPosition[0] + windowSize[0]) || !(mousePos.y >= windowPosition[1] && mousePos.y <= windowPosition[1] + windowSize[1])) {
+            window.hide();
         } else {
-            if (!store.get('detachedMode')) Positioner.position(window, tray.getBounds());
-            window.show();
-            window.focus()
+            setWindowFocusTimer()
         }
-
-    });
-    tray.on('right-click', function () {
-        window.hide();
-        tray.popUpContextMenu(getMenu())
-    })
+    }, 110)
 };
 
 app.on('ready', () => {
     useAutoUpdater();
-    createMainWindow();
     createTray();
+    createMainWindow(!store.has('instance'));
 });
 
 ipcMain.on('ha-instance', (event, args) => {
