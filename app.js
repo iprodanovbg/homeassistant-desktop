@@ -91,16 +91,6 @@ const getMenu = () => {
             }
         },
         {
-            label: 'Hide Window Bar',
-            type: 'checkbox',
-            enabled: store.get('detachedMode'),
-            checked: store.get('hideWindowBar'),
-            click: () => {
-                store.set('hideWindowBar', !store.get('hideWindowBar'));
-                createMainWindow(true)
-            }
-        },
-        {
             type: 'separator'
         },
         {
@@ -155,7 +145,7 @@ const createMainWindow = (show = false) => {
         show: false,
         skipTaskbar: true,
         autoHideMenuBar: true,
-        frame: !!store.get('detachedMode') && !store.get('hideWindowBar'),
+        frame: false,
         webPreferences: {
             nodeIntegration: true
         }
@@ -168,7 +158,14 @@ const createMainWindow = (show = false) => {
         if (!store.has('windowSize')) store.set('windowSize', window.getSize())
     }
 
-    window.loadURL(`file://${__dirname}/web/index.html`);
+    window.loadURL(`file://${__dirname}/web/index.html`)
+
+    window.webContents.on('did-finish-load', function() {
+       window.webContents.insertCSS('::-webkit-scrollbar { display: none; } body { -webkit-user-select: none; }');
+        if (store.get('detachedMode')) {
+            window.webContents.insertCSS('body { -webkit-app-region: drag; }');
+        }
+    });
 
     if (store.get('detachedMode')) {
         window.setSize(...store.get('windowSizeDetached'));

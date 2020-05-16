@@ -9,7 +9,7 @@
   "main": "app.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder build --mac --win --publish never",
+    "build-local": "electron-builder build --mac --win --publish never",
     "deploy": "electron-builder build --mac --win --publish always",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
