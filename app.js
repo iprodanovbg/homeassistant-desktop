@@ -24,8 +24,6 @@ const autoLauncher = new AutoLaunch({name: 'Home Assistant Desktop'});
 let autostartEnabled = false;
 let forceQuit = false;
 
-if (process.argv[1] === '--squirrel-firstrun') autoLauncher.enable();
-
 const useAutoUpdater = () => {
     autoUpdater.on('error', message => {
         console.error('There was a problem updating the application');
@@ -107,6 +105,12 @@ const getMenu = () => {
             type: 'separator'
         },
         {
+            label: 'Reload Window',
+            click: () => {
+                window.reload();
+            }
+        },
+        {
             label: 'Reset Settings...',
             click: () => {
                 dialog.showMessageBox({
@@ -123,7 +127,6 @@ const getMenu = () => {
                 })
             }
         },
-
         {
             type: 'separator'
         },
@@ -151,13 +154,6 @@ const createMainWindow = (show = false) => {
         }
     });
 
-    if (store.get('detachedMode')) {
-        if (!store.has('windowPosition')) store.set('windowPosition', window.getPosition());
-        if (!store.has('windowSizeDetached')) store.set('windowSizeDetached', window.getSize())
-    } else {
-        if (!store.has('windowSize')) store.set('windowSize', window.getSize())
-    }
-
     window.loadURL(`file://${__dirname}/web/index.html`)
 
     window.webContents.on('did-finish-load', function() {
@@ -168,10 +164,10 @@ const createMainWindow = (show = false) => {
     });
 
     if (store.get('detachedMode')) {
-        window.setSize(...store.get('windowSizeDetached'));
-        window.setPosition(...store.get('windowPosition'))
+        if (store.has('windowPosition')) window.setSize(...store.get('windowSizeDetached')); else store.set('windowPosition', window.getPosition());
+        if (store.has('windowSizeDetached')) window.setPosition(...store.get('windowPosition')); else store.set('windowSizeDetached', window.getSize())
     } else {
-        window.setSize(...store.get('windowSize'))
+        if (store.has('windowSize')) window.setSize(...store.get('windowSize')); else store.set('windowSize', window.getSize())
     }
 
     window.on('resize', () => {
@@ -220,7 +216,7 @@ const createTray = () => {
         });
 
         tray.on('right-click', () => {
-            window.hide();
+            if (!store.get('detachedMode')) window.hide();
             tray.popUpContextMenu(getMenu())
         });
 
