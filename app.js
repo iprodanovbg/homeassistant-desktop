@@ -213,7 +213,7 @@ const showWindow = () => {
 };
 
 const createTray = () => {
-        tray = new Tray(process.platform === 'win32' ? `${__dirname}/assets/IconWin.png` : `${__dirname}/assets/Icon.png`);
+        tray = new Tray(process.platform === 'win32' ? `${__dirname}/assets/IconWin.png` : `${__dirname}/assets/IconTemplate.png`);
 
         tray.on('click', () => {
             if (window.isVisible()) window.hide(); else showWindow();
