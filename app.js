@@ -29,8 +29,15 @@ const useAutoUpdater = () => {
         console.error('There was a problem updating the application');
         console.error(message)
     });
-    autoUpdater.checkForUpdatesAndNotify();
-};
+
+    setInterval(() => {
+        autoUpdater.checkForUpdates();
+    }, 1000 * 60 * 30)
+
+    autoUpdater.on('update-downloaded', () => {
+        autoUpdater.quitAndInstall();
+    });
+}
 
 const checkAutoStart = () => {
     autoLauncher.isEnabled().then((isEnabled) => {
@@ -156,8 +163,8 @@ const createMainWindow = (show = false) => {
 
     window.loadURL(`file://${__dirname}/web/index.html`)
 
-    window.webContents.on('did-finish-load', function() {
-       window.webContents.insertCSS('::-webkit-scrollbar { display: none; } body { -webkit-user-select: none; }');
+    window.webContents.on('did-finish-load', function () {
+        window.webContents.insertCSS('::-webkit-scrollbar { display: none; } body { -webkit-user-select: none; }');
         if (store.get('detachedMode')) {
             window.webContents.insertCSS('body { -webkit-app-region: drag; }');
         }
