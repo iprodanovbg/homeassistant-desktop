@@ -260,6 +260,7 @@ const setWindowFocusTimer = () => {
 };
 
 app.on('ready', () => {
+    checkAutoStart();
     useAutoUpdater();
     createTray();
     createMainWindow(!store.has('instance'));
