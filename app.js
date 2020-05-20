@@ -4,6 +4,8 @@ const AutoLaunch = require('auto-launch');
 const Positioner = require('electron-traywindow-positioner');
 const Store = require('electron-store');
 
+const indexFile = `file://${__dirname}/web/index.html`;
+
 app.allowRendererProcessReuse = true;
 
 // prevent multiple instances
@@ -32,12 +34,12 @@ const useAutoUpdater = () => {
 
     setInterval(() => {
         autoUpdater.checkForUpdates();
-    }, 1000 * 60 * 30)
+    }, 1000 * 60 * 30);
 
     autoUpdater.on('update-downloaded', () => {
         autoUpdater.quitAndInstall();
     });
-}
+};
 
 const checkAutoStart = () => {
     autoLauncher.isEnabled().then((isEnabled) => {
@@ -48,18 +50,57 @@ const checkAutoStart = () => {
 };
 
 const getMenu = () => {
-    return Menu.buildFromTemplate([
+    let instancesMenu = [{
+        label: 'Open in Browser',
+        enabled: currentInstance(),
+        click: () => {
+            shell.openExternal(currentInstance())
+        }
+    },
         {
-            label: (store.has('instance') ? store.get('instance').name : 'Not connected...'),
-            enabled: !!store.has('instance'),
-            click: () => {
-                shell.openExternal(store.get('instance').url)
+            type: 'separator'
+        }
+    ];
+
+    const allInstances = store.get('allInstances');
+
+    if (allInstances) {
+        allInstances.forEach((e) => {
+            instancesMenu.push({
+                label: e,
+                type: 'checkbox',
+                checked: currentInstance() === e,
+                click: () => {
+                    currentInstance(e);
+                    window.loadURL(e);
+                    window.show();
+                }
+            });
+        });
+
+        instancesMenu.push(
+            {
+                type: 'separator'
+            },
+            {
+                label: 'Add another Instance...', click: () => {
+                    store.delete('currentInstance');
+                    window.loadURL(indexFile);
+                    window.show();
+                }
             }
-        }, {
+        )
+    } else {
+        instancesMenu.push({label: 'Not Connected...', enabled: false})
+    }
+
+    return Menu.buildFromTemplate([...instancesMenu,
+        {
             type: 'separator'
         },
         {
             label: 'Hover to Show',
+            enabled: !store.get('detachedMode'),
             type: 'checkbox',
             checked: !store.get('disableHover'),
             click: () => {
@@ -92,6 +133,7 @@ const getMenu = () => {
             checked: store.get('detachedMode'),
             click: () => {
                 store.set('detachedMode', !store.get('detachedMode'));
+                window.hide();
                 createMainWindow(store.get('detachedMode'))
             }
         },
@@ -161,7 +203,7 @@ const createMainWindow = (show = false) => {
         }
     });
 
-    window.loadURL(`file://${__dirname}/web/index.html`)
+    window.loadURL(indexFile);
 
     window.webContents.on('did-finish-load', function () {
         window.webContents.insertCSS('::-webkit-scrollbar { display: none; } body { -webkit-user-select: none; }');
@@ -236,9 +278,9 @@ const createTray = () => {
                 if (!window.isVisible()) {
                     showWindow();
                 }
-                if (timer) clearTimeout(timer)
+                if (timer) clearTimeout(timer);
                 timer = setTimeout(() => {
-                    let mousePos = screen.getCursorScreenPoint()
+                    let mousePos = screen.getCursorScreenPoint();
                     let trayBounds = tray.getBounds();
                     if (!(mousePos.x >= trayBounds.x && mousePos.x <= trayBounds.x + trayBounds.width) || !(mousePos.y >= trayBounds.y && mousePos.y <= trayBounds.y + trayBounds.height)) {
                         setWindowFocusTimer()
@@ -263,16 +305,41 @@ const setWindowFocusTimer = () => {
 };
 
 app.on('ready', () => {
+    // temporary migration of instances to avoid breaking active instance
+    if (store.has('instance')) {
+        store.set('allInstances', [store.get('instance').url]);
+        store.set('currentInstance', 0);
+        store.delete('instance');
+    }
     checkAutoStart();
     useAutoUpdater();
     createTray();
-    createMainWindow(!store.has('instance'));
+    createMainWindow(!store.has('currentInstance'));
 });
 
-ipcMain.on('ha-instance', (event, args) => {
-    if (args) {
-        store.set('instance', args)
-    } else {
-        event.reply('ha-instance', store.get('instance'))
+const currentInstance = (url = null) => {
+    if (url) {
+        store.set('currentInstance', store.get('allInstances').indexOf(url));
     }
+    if (store.has('currentInstance')) {
+        return store.get('allInstances')[store.get('currentInstance')];
+    }
+    return false;
+};
+
+const addInstance = (url) => {
+    if (!store.has('allInstances')) store.set('allInstances', []);
+    let instances = store.get('allInstances');
+    if (instances.find(e => e === url)) {
+        return;
+    }
+    instances.push(url);
+    store.set('allInstances', instances);
+    currentInstance(url)
+};
+
+ipcMain.on('ha-instance', (event, args) => {
+    if (args) addInstance(args.url);
+    console.log(currentInstance());
+    if (currentInstance()) event.reply('ha-instance', currentInstance())
 });

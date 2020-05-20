@@ -12,8 +12,8 @@
 
         ipcRenderer.send('ha-instance');
 
-        ipcRenderer.on('ha-instance', function (event, arg) {
-            window.location.href = arg.url
+        ipcRenderer.on('ha-instance', function (event, url) {
+            window.location.href = url
         });
 
         function isValidUrl(string) {
