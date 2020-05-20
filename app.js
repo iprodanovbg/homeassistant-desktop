@@ -4,8 +4,6 @@ const AutoLaunch = require('auto-launch');
 const Positioner = require('electron-traywindow-positioner');
 const Store = require('electron-store');
 
-const indexFile = `file://${__dirname}/web/index.html`;
-
 app.allowRendererProcessReuse = true;
 
 // prevent multiple instances
@@ -23,8 +21,10 @@ if (process.platform === 'darwin') app.dock.hide();
 const store = new Store();
 const autoLauncher = new AutoLaunch({name: 'Home Assistant Desktop'});
 
+const indexFile = `file://${__dirname}/web/index.html`;
 let autostartEnabled = false;
 let forceQuit = false;
+
 
 const useAutoUpdater = () => {
     autoUpdater.on('error', message => {
@@ -33,6 +33,7 @@ const useAutoUpdater = () => {
     });
 
     autoUpdater.on('update-downloaded', () => {
+        forceQuit = true;
         autoUpdater.quitAndInstall();
     });
 
