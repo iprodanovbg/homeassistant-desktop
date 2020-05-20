@@ -32,13 +32,15 @@ const useAutoUpdater = () => {
         console.error(message)
     });
 
+    autoUpdater.on('update-downloaded', () => {
+        autoUpdater.quitAndInstall();
+    });
+
     setInterval(() => {
         autoUpdater.checkForUpdates();
     }, 1000 * 60 * 30);
 
-    autoUpdater.on('update-downloaded', () => {
-        autoUpdater.quitAndInstall();
-    });
+    autoUpdater.checkForUpdates();
 };
 
 const checkAutoStart = () => {
