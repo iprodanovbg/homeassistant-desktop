@@ -147,7 +147,7 @@ const getMenu = () => {
           store.has("allInstances") && store.get("allInstances").length > 1,
         checked: store.get("automaticSwitching"),
         click: () => {
-          store.set("automaticSwitching", store.get("automaticSwitching"));
+          store.set("automaticSwitching", !store.get("automaticSwitching"));
         },
       }
     );
