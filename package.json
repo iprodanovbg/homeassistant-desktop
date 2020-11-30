@@ -9,8 +9,8 @@
   "main": "app.js",
   "scripts": {
     "start": "electron .",
-    "build-local": "electron-builder build --mac --win --ia32 --publish never",
-    "deploy": "electron-builder build --mac --win --ia32 --publish always",
+    "build-local": "electron-builder build --mac --win --linux appimage --ia32 --publish never && electron-builder build --linux appimage --x64 --publish never",
+    "deploy": "electron-builder build --mac --win --linux appimage --ia32 --publish always && electron-builder build --linux appimage --x64 --publish always",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Marvin Kelm (https://github.com/mrvnklm)",
