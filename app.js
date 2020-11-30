@@ -376,8 +376,6 @@ const createTray = () => {
       : `${__dirname}/assets/IconTemplate.png`
   );
 
-  if (process.platform === "linux") tray.setContextMenu(getMenu());
-
   tray.on("click", () => {
     if (window.isVisible()) window.hide();
     else showWindow();
@@ -448,8 +446,9 @@ const setWindowFocusTimer = () => {
 app.on("ready", () => {
   checkAutoStart();
   useAutoUpdater();
-  createMainWindow(!store.has("currentInstance"));
   createTray();
+  createMainWindow(!store.has("currentInstance"));
+  if (process.platform === "linux") tray.setContextMenu(getMenu());
   startAvailabilityCheck();
 
   // disable hover for first start
