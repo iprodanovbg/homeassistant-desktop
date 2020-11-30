@@ -1,6 +1,6 @@
 # Home Assistant - Desktop
 
-Desktop App (Windows / macOS) for [Home Assistant](https://www.home-assistant.io/) built with [Electron](https://www.electronjs.org)
+Desktop App (Windows / macOS / Linux) for [Home Assistant](https://www.home-assistant.io/) built with [Electron](https://www.electronjs.org)
 
 ![Home Assistant - Desktop](https://raw.githubusercontent.com/mrvnklm/homeassistant-desktop/master/media/screenshot.png)
 

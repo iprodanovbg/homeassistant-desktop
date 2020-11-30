@@ -156,12 +156,25 @@ const getMenu = () => {
   }
 
   return Menu.buildFromTemplate([
+    {
+      label: "Show/Hide Window",
+      visible: process.platform === "linux",
+      click: () => {
+        if (window.isVisible()) window.hide();
+        else showWindow();
+      },
+    },
+    {
+      visible: process.platform === "linux",
+      type: "separator",
+    },
     ...instancesMenu,
     {
       type: "separator",
     },
     {
       label: "Hover to Show",
+      visible: process.platform !== "linux",
       enabled: !store.get("detachedMode"),
       type: "checkbox",
       checked: !store.get("disableHover"),
@@ -321,7 +334,7 @@ const createMainWindow = (show = false) => {
     if (store.get("detachedMode")) {
       store.set("windowSizeDetached", window.getSize());
     } else {
-      Positioner.position(window, tray.getBounds());
+      if (process.platform !== "linux") Positioner.position(window, tray.getBounds());
       store.set("windowSize", window.getSize());
     }
   });
@@ -358,7 +371,7 @@ const showWindow = () => {
 
 const createTray = () => {
   tray = new Tray(
-    process.platform === "win32"
+    ["win32", "linux"].includes(process.platform)
       ? `${__dirname}/assets/IconWin.png`
       : `${__dirname}/assets/IconTemplate.png`
   );
@@ -435,6 +448,7 @@ app.on("ready", () => {
   useAutoUpdater();
   createTray();
   createMainWindow(!store.has("currentInstance"));
+  if (process.platform === "linux") tray.setContextMenu(getMenu());
   startAvailabilityCheck();
 
   // disable hover for first start
