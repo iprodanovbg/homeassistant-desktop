@@ -24,9 +24,9 @@ jobs:
 
       - name: Build/release Electron app
         uses: samuelmeuli/action-electron-builder@v1
+        if: runner.os == 'Windows' || runner.os == 'macOS'
         with:
           skip_build: true
-          if: contains(['Windows', 'macOS'], runner.os)
           # GitHub token, automatically provided to the action
           # (No need to define this secret in the repo settings)
           github_token: ${{ secrets.github_token }}
@@ -42,9 +42,9 @@ jobs:
           
       - name: Build/release Linux Electron app
         uses: samuelmeuli/action-electron-builder@v1
+        if: runner.os == 'Linux'
         with:
           skip_build: true
-          if: contains(['Linux'], runner.os)
           # GitHub token, automatically provided to the action
           # (No need to define this secret in the repo settings)
           github_token: ${{ secrets.github_token }}
