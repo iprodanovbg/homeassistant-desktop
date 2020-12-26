@@ -14,6 +14,7 @@ Just download the latest version for your platform from the [releases section](h
 - supports multiple instances of Home Assistant (including automatic switching)
 - automatic instance discovery using bonjour
 - right-click context menu for settings / reset / quit the app
+- global keyboard shortcut (Cmd / Ctrl + Alt + X) can be enabled to show / hide Home Assistant
 - updates are installed automatically if a new version is available (restart required)
 
 ## Notes
