@@ -3,6 +3,7 @@ const {
   dialog,
   ipcMain,
   shell,
+  globalShortcut,
   screen,
   net,
   Menu,
@@ -13,6 +14,18 @@ const { autoUpdater } = require("electron-updater");
 const AutoLaunch = require("auto-launch");
 const Positioner = require("electron-traywindow-positioner");
 const Store = require("electron-store");
+const bonjour = require("bonjour")();
+
+const registerKeyboardShortcut = () => {
+  globalShortcut.register("CommandOrControl+Alt+X", () => {
+    if (window.isVisible()) window.hide();
+    else showWindow();
+  });
+};
+
+const unregisterKeyboardShortcut = () => {
+  globalShortcut.unregisterAll();
+};
 
 app.allowRendererProcessReuse = true;
 
@@ -83,18 +96,31 @@ const startAvailabilityCheck = () => {
 
 const checkForAvailableInstance = () => {
   const instances = store.get("allInstances");
-
-  if (instances && instances.length > 1) {
-    instances
-      .filter((e) => e.url !== currentInstance())
-      .forEach((e) => {
-        const request = net.request(`${e}/auth/providers`);
+  if (instances?.length > 1) {
+    bonjour.find({ type: "home-assistant" }, (instance) => {
+      if (instances.indexOf(instance.txt.internal_url) !== -1)
+        return currentInstance(instance.txt.internal_url);
+      if (instances.indexOf(instance.txt.external_url) !== -1)
+        return currentInstance(instance.txt.external_url);
+    });
+    let found;
+    for (let instance of instances.filter((e) => e.url !== currentInstance())) {
+    
+ 
+        const request = net.request(`${instance}/auth/providers`);
         request.on("response", (response) => {
-          if (response.statusCode === 200) currentInstance(e);
+          if (response.statusCode === 200) {
+            found = instance
+          }
         });
         request.on("error", (error) => {});
         request.end();
-      });
+
+        if (found) {
+          currentInstance(found);
+          break;
+        }
+      }
   }
 };
 
@@ -174,7 +200,7 @@ const getMenu = () => {
     },
     {
       label: "Hover to Show",
-      visible: process.platform !== "linux",
+      visible: process.platform !== "linux" && !store.get("detachedMode"),
       enabled: !store.get("detachedMode"),
       type: "checkbox",
       checked: !store.get("disableHover"),
@@ -199,6 +225,17 @@ const getMenu = () => {
         if (autostartEnabled) autoLauncher.disable();
         else autoLauncher.enable();
         checkAutoStart();
+      },
+    },
+    {
+      label: `Enable Shortcut`,
+      type: "checkbox",
+      accelerator: "CommandOrControl+Alt+X",
+      checked: store.get("shortcutEnabled"),
+      click: () => {
+        store.set("shortcutEnabled", !store.get("shortcutEnabled"));
+        if (store.get("shortcutEnabled")) registerKeyboardShortcut();
+        else unregisterKeyboardShortcut();
       },
     },
     {
@@ -234,6 +271,8 @@ const getMenu = () => {
       label: "Reload Window",
       click: () => {
         window.reload();
+        window.show();
+        window.focus();
       },
     },
     {
@@ -302,7 +341,7 @@ const createMainWindow = (show = false) => {
     window.webContents.insertCSS(
       "::-webkit-scrollbar { display: none; } body { -webkit-user-select: none; }"
     );
-    if (store.get("detachedMode")) {
+    if (store.get("detachedMode") && process.platform === "darwin") {
       window.webContents.insertCSS("body { -webkit-app-region: drag; }");
     }
   });
@@ -334,7 +373,8 @@ const createMainWindow = (show = false) => {
     if (store.get("detachedMode")) {
       store.set("windowSizeDetached", window.getSize());
     } else {
-      if (process.platform !== "linux") Positioner.position(window, tray.getBounds());
+      if (process.platform !== "linux")
+        Positioner.position(window, tray.getBounds());
       store.set("windowSize", window.getSize());
     }
   });
@@ -450,11 +490,14 @@ app.on("ready", () => {
   createMainWindow(!store.has("currentInstance"));
   if (process.platform === "linux") tray.setContextMenu(getMenu());
   startAvailabilityCheck();
-
+  // register shortcut
+  if (store.get("shortcutEnabled")) registerKeyboardShortcut();
   // disable hover for first start
-  if (!store.has("currentInstance")) {
-    store.set("disableHover", true);
-  }
+  if (!store.has("currentInstance")) store.set("disableHover", true);
+});
+
+app.on("will-quit", () => {
+  unregisterKeyboardShortcut();
 });
 
 const currentInstance = (url = null) => {
@@ -493,6 +536,10 @@ const showError = (isError) => {
   )
     window.loadURL(errorFile);
 };
+
+ipcMain.on("get-instances", (event) => {
+  event.reply("get-instances", store.get("allInstances") || []);
+});
 
 ipcMain.on("ha-instance", (event, url) => {
   if (url) addInstance(url);

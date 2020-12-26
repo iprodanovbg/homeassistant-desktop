@@ -8,6 +8,30 @@
     <link href="assets/checkmark.css" rel="stylesheet" />
     <script>
       const { ipcRenderer } = require("electron");
+      const bonjour = require('bonjour')()
+
+       function showInstance(url) {
+         document.getElementById('availableInstancesContainer').style.display = "block"
+        const button = document.createElement("button")
+        button.onclick = () => addInstance(url)
+        button.classList.add("pure-material-button-contained")
+        button.textContent = url
+    document.getElementById('availableInstances').append(button)
+}
+
+      ipcRenderer.send("get-instances");
+      ipcRenderer.on("get-instances", (event, result) =>  {
+       let instances = result
+       
+        bonjour.find({ type: 'home-assistant' },  instance =>  {
+        if (instances.indexOf(instance.txt.internal_url) === -1) showInstance(instance.txt.internal_url)
+        if (instances.indexOf(instance.txt.external_url) === -1) showInstance(instance.txt.external_url)
+})
+      })
+
+     function addInstance(url) {
+      ipcRenderer.send("ha-instance", url);
+     }
 
       ipcRenderer.send("ha-instance");
 
@@ -57,12 +81,22 @@
   </head>
 
   <body>
+    <div class="container">
     <div class="content">
       <div class="center header">
         <img src="assets/favicon.png" height="52" /> Home Assistant
       </div>
+      <div id="availableInstancesContainer" style="display:none;">
       <div class="center">
-        <p>Please enter your Home Assistant URL in the field below:</p>
+        <p>Available Instances: </p>
+      </div>
+      <div class="center">
+        <div id="availableInstances">
+        </div>
+      </div>
+    </div>
+      <div class="center">
+        <p>Add Instance via URL</p>
       </div>
       <div class="center">
         <div id="check-wrapper" class="success-checkmark">
@@ -80,6 +114,7 @@
           <label>Home Assistant URL</label>
         </div>
       </div>
+
       <div class="center">
         <p>
           <small class="grey"
@@ -88,6 +123,7 @@
           >
         </p>
       </div>
+    </div>
     </div>
   </body>
 </html>

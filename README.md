@@ -12,8 +12,13 @@ Just download the latest version for your platform from the [releases section](h
 
 - hover / click the tray icon to open the app
 - supports multiple instances of Home Assistant (including automatic switching)
-- right-click to open context menu and change some settings / reset / quit the app
+- automatic instance discovery using bonjour
+- right-click context menu for settings / reset / quit the app
 - updates are installed automatically if a new version is available (restart required)
+
+## Notes
+
+- if using "detached window" on Windows, instead of dragging, you have to resize it to move it
 
 ## License
 
@@ -22,7 +27,3 @@ Home Assistant Desktop is open-source and [Apache 2](https://choosealicense.com/
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-
-I like coffee, so if you feel like buying one for me - go ahead!
-
-<a href="https://www.buymeacoffee.com/mrvnk" target="_blank"><img alt="Buy Me A Coffee" src="https://www.buymeacoffee.com/assets/img/custom_images/yellow_img.png" style="height: auto !important; width: auto !important;" /></a>
