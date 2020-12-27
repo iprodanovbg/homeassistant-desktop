@@ -21,10 +21,6 @@ Just download the latest version for your platform from the [releases section](h
 
 - if using "detached window" on Windows, instead of dragging, you have to resize it to move it
 
-## License
-
-Home Assistant Desktop is open-source and [Apache 2](https://choosealicense.com/licenses/apache-2.0/) licensed
-
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
