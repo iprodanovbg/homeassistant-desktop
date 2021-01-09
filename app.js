@@ -63,10 +63,10 @@ const useAutoUpdater = () => {
   });
 
   setInterval(() => {
-    autoUpdater.checkForUpdates();
+    if (store.get("autoUpdate")) autoUpdater.checkForUpdates();
   }, 1000 * 60 * 60);
 
-  autoUpdater.checkForUpdates();
+  if (store.get("autoUpdate")) autoUpdater.checkForUpdates();
 };
 
 const checkAutoStart = () => {
@@ -255,8 +255,16 @@ const getMenu = () => {
       type: "separator",
     },
     {
-      label: `v${app.getVersion()} (Auto Update)`,
+      label: `v${app.getVersion()}`,
       enabled: false,
+    },
+    {
+      label: "Automatic Updates",
+      type: "checkbox",
+      checked: store.get("autoUpdate"),
+      click: () => {
+        store.set("autoUpdate", !store.get("autoUpdate"));
+      },
     },
     {
       label: "Open on github.com",
@@ -494,6 +502,8 @@ app.on("ready", () => {
   if (store.get("shortcutEnabled")) registerKeyboardShortcut();
   // disable hover for first start
   if (!store.has("currentInstance")) store.set("disableHover", true);
+  // enable auto update by default
+  if (!store.has("autoUpdate")) store.set("autoUpdate", true);
 });
 
 app.on("will-quit", () => {
