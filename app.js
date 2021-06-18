@@ -94,6 +94,32 @@ const startAvailabilityCheck = () => {
   }, 3000);
 };
 
+const changePosition = () => {
+  const trayBounds = tray.getBounds();
+  const windowBounds = window.getBounds();
+  const displayWorkArea = screen.getDisplayNearestPoint({x: trayBounds.x, y: trayBounds.y}).workAreaSize;
+  const taskBarPosition = Positioner.getTaskbarPosition(trayBounds);
+
+  if (taskBarPosition == 'top' || taskBarPosition == 'bottom') {
+    const alignment = { x: 'center', y: taskBarPosition == 'top' ? 'up' : 'down' };
+    if ((trayBounds.x + (trayBounds.width + windowBounds.width) / 2) < displayWorkArea.width)
+      Positioner.position(window, trayBounds, alignment);
+    else{
+      const {y} = Positioner.calculate(window.getBounds(), trayBounds, alignment);
+      window.setPosition(displayWorkArea.width - windowBounds.width, y, false);
+    }
+  }
+  else {
+    const alignment = { x: taskBarPosition, y: 'center' };
+    if ((trayBounds.y + (trayBounds.height + windowBounds.height) / 2) < displayWorkArea.height)
+      Positioner.position(window, trayBounds, alignment);
+    else{
+      const {x} = Positioner.calculate(window.getBounds(), trayBounds, alignment);
+      window.setPosition(x, displayWorkArea.height - windowBounds.height, false);
+    }
+  }
+}
+
 const checkForAvailableInstance = () => {
   const instances = store.get("allInstances");
   if (instances?.length > 1) {
@@ -381,8 +407,9 @@ const createMainWindow = (show = false) => {
     if (store.get("detachedMode")) {
       store.set("windowSizeDetached", window.getSize());
     } else {
-      if (process.platform !== "linux")
-        Positioner.position(window, tray.getBounds());
+      if (process.platform !== "linux" )
+          changePosition();
+        
       store.set("windowSize", window.getSize());
     }
   });
@@ -408,7 +435,7 @@ const createMainWindow = (show = false) => {
 };
 
 const showWindow = () => {
-  if (!store.get("detachedMode")) Positioner.position(window, tray.getBounds());
+  if (!store.get("detachedMode")) changePosition();
   if (!window.isVisible()) {
     window.setVisibleOnAllWorkspaces(true); // put the window on all screens
     window.show();
