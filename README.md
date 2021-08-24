@@ -1,3 +1,7 @@
+# NOTE
+
+[[INFO] This app is still maintained, v2 will be coming within the next months. Feature requests?](https://github.com/mrvnklm/homeassistant-desktop/issues/42)
+
 # Home Assistant - Desktop
 
 Desktop App (Windows / macOS / Linux) for [Home Assistant](https://www.home-assistant.io/) built with [Electron](https://www.electronjs.org)
