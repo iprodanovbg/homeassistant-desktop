@@ -1,3 +1,8 @@
+# Update - 04. November 2021
+
+- added arm64 builds (experimental)
+- updated electron (v8 to v13) + dependencies
+
 # NOTE
 
 [[INFO] This app is still maintained, v2 will be coming within the next months. Feature requests?](https://github.com/mrvnklm/homeassistant-desktop/issues/42)
