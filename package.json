@@ -4,7 +4,7 @@
     "type": "git",
     "url": "https://github.com/mrvnklm/homeassistant-desktop"
   },
-  "version": "1.4.0",
+  "version": "1.4.2",
   "description": "Desktop App (Windows / macOS / Linux) for Home Assistant built with Electron",
   "main": "app.js",
   "scripts": {
