@@ -97,28 +97,51 @@ const startAvailabilityCheck = () => {
 const changePosition = () => {
   const trayBounds = tray.getBounds();
   const windowBounds = window.getBounds();
-  const displayWorkArea = screen.getDisplayNearestPoint({x: trayBounds.x, y: trayBounds.y}).workAreaSize;
+  const displayWorkArea = screen.getDisplayNearestPoint({
+    x: trayBounds.x,
+    y: trayBounds.y,
+  }).workAreaSize;
   const taskBarPosition = Positioner.getTaskbarPosition(trayBounds);
 
-  if (taskBarPosition == 'top' || taskBarPosition == 'bottom') {
-    const alignment = { x: 'center', y: taskBarPosition == 'top' ? 'up' : 'down' };
-    if ((trayBounds.x + (trayBounds.width + windowBounds.width) / 2) < displayWorkArea.width)
+  if (taskBarPosition == "top" || taskBarPosition == "bottom") {
+    const alignment = {
+      x: "center",
+      y: taskBarPosition == "top" ? "up" : "down",
+    };
+    if (
+      trayBounds.x + (trayBounds.width + windowBounds.width) / 2 <
+      displayWorkArea.width
+    )
       Positioner.position(window, trayBounds, alignment);
-    else{
-      const {y} = Positioner.calculate(window.getBounds(), trayBounds, alignment);
+    else {
+      const { y } = Positioner.calculate(
+        window.getBounds(),
+        trayBounds,
+        alignment
+      );
       window.setPosition(displayWorkArea.width - windowBounds.width, y, false);
     }
-  }
-  else {
-    const alignment = { x: taskBarPosition, y: 'center' };
-    if ((trayBounds.y + (trayBounds.height + windowBounds.height) / 2) < displayWorkArea.height)
+  } else {
+    const alignment = { x: taskBarPosition, y: "center" };
+    if (
+      trayBounds.y + (trayBounds.height + windowBounds.height) / 2 <
+      displayWorkArea.height
+    )
       Positioner.position(window, trayBounds, alignment);
-    else{
-      const {x} = Positioner.calculate(window.getBounds(), trayBounds, alignment);
-      window.setPosition(x, displayWorkArea.height - windowBounds.height, false);
+    else {
+      const { x } = Positioner.calculate(
+        window.getBounds(),
+        trayBounds,
+        alignment
+      );
+      window.setPosition(
+        x,
+        displayWorkArea.height - windowBounds.height,
+        false
+      );
     }
   }
-}
+};
 
 const checkForAvailableInstance = () => {
   const instances = store.get("allInstances");
@@ -131,22 +154,20 @@ const checkForAvailableInstance = () => {
     });
     let found;
     for (let instance of instances.filter((e) => e.url !== currentInstance())) {
-    
- 
-        const request = net.request(`${instance}/auth/providers`);
-        request.on("response", (response) => {
-          if (response.statusCode === 200) {
-            found = instance
-          }
-        });
-        request.on("error", (error) => {});
-        request.end();
-
-        if (found) {
-          currentInstance(found);
-          break;
+      const request = net.request(`${instance}/auth/providers`);
+      request.on("response", (response) => {
+        if (response.statusCode === 200) {
+          found = instance;
         }
+      });
+      request.on("error", (error) => {});
+      request.end();
+
+      if (found) {
+        currentInstance(found);
+        break;
       }
+    }
   }
 };
 
@@ -348,8 +369,8 @@ const getMenu = () => {
   ]);
 };
 
-const createMainWindow = (show = false) => {
-  window = new BrowserWindow({
+const createMainWindow = async (show = false) => {
+  window = await new BrowserWindow({
     width: 420,
     height: 420,
     show: false,
@@ -358,6 +379,7 @@ const createMainWindow = (show = false) => {
     frame: false,
     webPreferences: {
       nodeIntegration: true,
+      contextIsolation: false,
     },
   });
 
@@ -407,9 +429,8 @@ const createMainWindow = (show = false) => {
     if (store.get("detachedMode")) {
       store.set("windowSizeDetached", window.getSize());
     } else {
-      if (process.platform !== "linux" )
-          changePosition();
-        
+      if (process.platform !== "linux") changePosition();
+
       store.set("windowSize", window.getSize());
     }
   });
