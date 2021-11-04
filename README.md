@@ -1,4 +1,4 @@
-# Update - 04. November 2021
+# 04. November 2021 - changes:
 
 - added arm64 builds (experimental)
 - updated electron (v8 to v13) + dependencies
