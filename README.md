@@ -1,8 +1,3 @@
-# 04. November 2021 - changes:
-
-- added arm64 builds (experimental)
-- updated electron (v8 to v13) + dependencies
-
 # NOTE
 
 [[INFO] This app is still maintained, v2 will be coming within the next months. Feature requests?](https://github.com/mrvnklm/homeassistant-desktop/issues/42)
@@ -25,6 +20,11 @@ Just download the latest version for your platform from the [releases section](h
 - right-click context menu for settings / reset / quit the app
 - global keyboard shortcut (Cmd / Ctrl + Alt + X) can be enabled to show / hide Home Assistant
 - updates are installed automatically if a new version is available (restart required)
+
+# 04. November 2021 - changes:
+
+- added arm64 builds (experimental)
+- updated electron (v8 to v13) + dependencies
 
 ## Notes
 
