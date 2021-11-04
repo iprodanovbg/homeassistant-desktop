@@ -21,7 +21,7 @@ Just download the latest version for your platform from the [releases section](h
 - global keyboard shortcut (Cmd / Ctrl + Alt + X) can be enabled to show / hide Home Assistant
 - updates are installed automatically if a new version is available (restart required)
 
-# 04. November 2021 - changes:
+## 04. November 2021 - changes:
 
 - added arm64 builds (experimental)
 - updated electron (v8 to v13) + dependencies
