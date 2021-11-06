@@ -99,8 +99,8 @@ const changePosition = () => {
   const windowBounds = window.getBounds();
   const displayWorkArea = screen.getDisplayNearestPoint({
     x: trayBounds.x,
-    y: trayBounds.y,
-  }).workAreaSize;
+    y: trayBounds.y
+  }).workArea
   const taskBarPosition = Positioner.getTaskbarPosition(trayBounds);
 
   if (taskBarPosition == "top" || taskBarPosition == "bottom") {
@@ -119,16 +119,23 @@ const changePosition = () => {
         trayBounds,
         alignment
       );
-      window.setPosition(displayWorkArea.width - windowBounds.width, y, false);
+
+      window.setPosition(
+        displayWorkArea.width - windowBounds.width + displayWorkArea.x,
+        y + (taskBarPosition == 'bottom' && displayWorkArea.y),
+        false
+      )
     }
   } else {
     const alignment = { x: taskBarPosition, y: "center" };
     if (
       trayBounds.y + (trayBounds.height + windowBounds.height) / 2 <
       displayWorkArea.height
-    )
-      Positioner.position(window, trayBounds, alignment);
-    else {
+    ) {
+      const {x, y} = Positioner.calculate(window.getBounds(), trayBounds, alignment)
+      window.setPosition(x + (taskBarPosition == 'right' && displayWorkArea.x), y)
+
+    } else {
       const { x } = Positioner.calculate(
         window.getBounds(),
         trayBounds,
@@ -136,7 +143,7 @@ const changePosition = () => {
       );
       window.setPosition(
         x,
-        displayWorkArea.height - windowBounds.height,
+        displayWorkArea.y + displayWorkArea.height - windowBounds.height,
         false
       );
     }
