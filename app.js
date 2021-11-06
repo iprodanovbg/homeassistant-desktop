@@ -15,7 +15,7 @@ const AutoLaunch = require("auto-launch");
 const Positioner = require("electron-traywindow-positioner");
 const Store = require("electron-store");
 const bonjour = require("bonjour")();
-
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const registerKeyboardShortcut = () => {
   globalShortcut.register("CommandOrControl+Alt+X", () => {
     if (window.isVisible()) window.hide();
@@ -453,6 +453,8 @@ const createMainWindow = async (show = false) => {
   });
 
   if (show) showWindow();
+
+  return window;
 };
 
 const showWindow = () => {
@@ -465,8 +467,8 @@ const showWindow = () => {
   }
 };
 
-const createTray = () => {
-  tray = new Tray(
+const createTray = async () => {
+  tray = await new Tray(
     ["win32", "linux"].includes(process.platform)
       ? `${__dirname}/assets/IconWin.png`
       : `${__dirname}/assets/IconTemplate.png`
@@ -514,6 +516,7 @@ const createTray = () => {
       }
     }, 100);
   });
+  return tray;
 };
 
 const setWindowFocusTimer = () => {
@@ -539,11 +542,11 @@ const setWindowFocusTimer = () => {
   }, 110);
 };
 
-app.on("ready", () => {
+app.on("ready", async () => {
   checkAutoStart();
   useAutoUpdater();
-  createTray();
-  createMainWindow(!store.has("currentInstance"));
+  await createMainWindow(!store.has("currentInstance"));
+  await createTray();
   if (process.platform === "linux") tray.setContextMenu(getMenu());
   startAvailabilityCheck();
   // register shortcut

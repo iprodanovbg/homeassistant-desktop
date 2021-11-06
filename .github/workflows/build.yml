@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: 16
 
-      - name: Build/release Electron app
+      - name: Build/release macOS Electron app
         uses: samuelmeuli/action-electron-builder@v1
         if: runner.os == 'macOS'
         with:
@@ -40,7 +40,7 @@ jobs:
           # release the app after building
           release: ${{ startsWith(github.ref, 'refs/tags/v') }}
 
-      - name: Build/release Electron app
+      - name: Build/release Windows Electron app
         uses: samuelmeuli/action-electron-builder@v1
         if: runner.os == 'Windows'
         with:
