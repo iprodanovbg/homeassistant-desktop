@@ -99,8 +99,8 @@ const changePosition = () => {
   const windowBounds = window.getBounds();
   const displayWorkArea = screen.getDisplayNearestPoint({
     x: trayBounds.x,
-    y: trayBounds.y
-  }).workArea
+    y: trayBounds.y,
+  }).workArea;
   const taskBarPosition = Positioner.getTaskbarPosition(trayBounds);
 
   if (taskBarPosition == "top" || taskBarPosition == "bottom") {
@@ -122,9 +122,9 @@ const changePosition = () => {
 
       window.setPosition(
         displayWorkArea.width - windowBounds.width + displayWorkArea.x,
-        y + (taskBarPosition == 'bottom' && displayWorkArea.y),
+        y + (taskBarPosition == "bottom" && displayWorkArea.y),
         false
-      )
+      );
     }
   } else {
     const alignment = { x: taskBarPosition, y: "center" };
@@ -132,9 +132,15 @@ const changePosition = () => {
       trayBounds.y + (trayBounds.height + windowBounds.height) / 2 <
       displayWorkArea.height
     ) {
-      const {x, y} = Positioner.calculate(window.getBounds(), trayBounds, alignment)
-      window.setPosition(x + (taskBarPosition == 'right' && displayWorkArea.x), y)
-
+      const { x, y } = Positioner.calculate(
+        window.getBounds(),
+        trayBounds,
+        alignment
+      );
+      window.setPosition(
+        x + (taskBarPosition == "right" && displayWorkArea.x),
+        y
+      );
     } else {
       const { x } = Positioner.calculate(
         window.getBounds(),
@@ -376,8 +382,8 @@ const getMenu = () => {
   ]);
 };
 
-const createMainWindow = async (show = false) => {
-  window = await new BrowserWindow({
+const createMainWindow = (show = false) => {
+  window = new BrowserWindow({
     width: 420,
     height: 420,
     show: false,
@@ -460,8 +466,6 @@ const createMainWindow = async (show = false) => {
   });
 
   if (show) showWindow();
-
-  return window;
 };
 
 const showWindow = () => {
@@ -474,8 +478,8 @@ const showWindow = () => {
   }
 };
 
-const createTray = async () => {
-  tray = await new Tray(
+const createTray = () => {
+  tray = new Tray(
     ["win32", "linux"].includes(process.platform)
       ? `${__dirname}/assets/IconWin.png`
       : `${__dirname}/assets/IconTemplate.png`
@@ -523,7 +527,8 @@ const createTray = async () => {
       }
     }, 100);
   });
-  return tray;
+
+  if (process.platform === "linux") tray.setContextMenu(getMenu());
 };
 
 const setWindowFocusTimer = () => {
@@ -549,12 +554,11 @@ const setWindowFocusTimer = () => {
   }, 110);
 };
 
-app.on("ready", async () => {
+app.on("ready", () => {
   checkAutoStart();
   useAutoUpdater();
-  await createMainWindow(!store.has("currentInstance"));
-  await createTray();
-  if (process.platform === "linux") tray.setContextMenu(getMenu());
+  createMainWindow(!store.has("currentInstance"));
+  createTray();
   startAvailabilityCheck();
   // register shortcut
   if (store.get("shortcutEnabled")) registerKeyboardShortcut();
