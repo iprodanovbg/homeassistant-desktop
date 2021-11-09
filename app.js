@@ -557,8 +557,8 @@ const setWindowFocusTimer = () => {
 app.on("ready", () => {
   checkAutoStart();
   useAutoUpdater();
-  createMainWindow(!store.has("currentInstance"));
   createTray();
+  createMainWindow(!store.has("currentInstance"));
   startAvailabilityCheck();
   // register shortcut
   if (store.get("shortcutEnabled")) registerKeyboardShortcut();
