@@ -15,7 +15,6 @@ const AutoLaunch = require("auto-launch");
 const Positioner = require("electron-traywindow-positioner");
 const Store = require("electron-store");
 const bonjour = require("bonjour")();
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const registerKeyboardShortcut = () => {
   globalShortcut.register("CommandOrControl+Alt+X", () => {
     if (window.isVisible()) window.hide();
@@ -271,9 +270,10 @@ const getMenu = () => {
     {
       label: "Stay on Top",
       type: "checkbox",
-      checked: window.isAlwaysOnTop(),
+      checked: store.get("stayOnTop"),
       click: () => {
-        window.setAlwaysOnTop(!window.isAlwaysOnTop());
+        store.set("stayOnTop", !store.get("stayOnTop"));
+        window.setAlwaysOnTop(store.get("stayOnTop"));
         if (window.isAlwaysOnTop()) showWindow();
       },
     },
@@ -465,7 +465,8 @@ const createMainWindow = (show = false) => {
     if (!store.get("detachedMode") && !window.isAlwaysOnTop()) window.hide();
   });
 
-  if (show) showWindow();
+  window.setAlwaysOnTop(store.get("stayOnTop"));
+  if (window.isAlwaysOnTop() || show) showWindow();
 };
 
 const showWindow = () => {
@@ -560,6 +561,7 @@ app.on("ready", () => {
   createTray();
   createMainWindow(!store.has("currentInstance"));
   startAvailabilityCheck();
+
   // register shortcut
   if (store.get("shortcutEnabled")) registerKeyboardShortcut();
   // disable hover for first start
