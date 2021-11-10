@@ -549,8 +549,6 @@ const createTray = () => {
       }
     }, 100);
   });
-
-  if (process.platform === "linux") tray.setContextMenu(getMenu());
 };
 
 const setWindowFocusTimer = () => {
@@ -582,11 +580,12 @@ app.on("ready", async () => {
 
   createTray();
   // workaround for initial window misplacement due to traybounds being incorrect
-  while (tray.getBounds().x === 0 || process.uptime() >= 1) {
+  while (tray.getBounds().x === 0 && process.uptime() <= 1) {
     await delay(15);
   }
-
   createMainWindow(!store.has("currentInstance"));
+
+  if (process.platform === "linux") tray.setContextMenu(getMenu());
   startAvailabilityCheck();
 
   // register shortcut
