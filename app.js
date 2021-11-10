@@ -15,6 +15,7 @@ const AutoLaunch = require("auto-launch");
 const Positioner = require("electron-traywindow-positioner");
 const Store = require("electron-store");
 const bonjour = require("bonjour")();
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const registerKeyboardShortcut = () => {
   globalShortcut.register("CommandOrControl+Alt+X", () => {
     if (window.isVisible()) window.hide();
@@ -312,6 +313,15 @@ const getMenu = () => {
       },
     },
     {
+      label: "Use Fullscreen",
+      type: "checkbox",
+      checked: window.isFullScreen(),
+      accelerator: "CommandOrControl+Alt+Return",
+      click: () => {
+        toggleFullScreen();
+      },
+    },
+    {
       type: "separator",
     },
     {
@@ -363,6 +373,8 @@ const getMenu = () => {
               store.delete("windowSizeDetached");
               store.delete("windowSize");
               store.delete("windowPosition");
+              store.delete("fullScreen");
+              store.delete("detachedMode");
               app.relaunch();
               app.exit();
             }
@@ -410,9 +422,13 @@ const createMainWindow = (show = false) => {
     window.webContents.insertCSS(
       "::-webkit-scrollbar { display: none; } body { -webkit-user-select: none; }"
     );
+
     if (store.get("detachedMode") && process.platform === "darwin") {
       window.webContents.insertCSS("body { -webkit-app-region: drag; }");
     }
+
+    // let code = `document.addEventListener("mousemove", () => { ipcRenderer.send("mousemove"); });`;
+    // window.webContents.executeJavaScript(code);
   });
 
   if (store.get("detachedMode")) {
@@ -428,6 +444,9 @@ const createMainWindow = (show = false) => {
   }
 
   window.on("resize", (e) => {
+    // ignore resize event when using fullscreen mode
+    if (window.isFullScreen()) return e;
+
     if (!store.get("disableHover") || resizeEvent) {
       store.set("disableHover", true);
       resizeEvent = e;
@@ -465,8 +484,10 @@ const createMainWindow = (show = false) => {
     if (!store.get("detachedMode") && !window.isAlwaysOnTop()) window.hide();
   });
 
-  window.setAlwaysOnTop(store.get("stayOnTop"));
+  window.setAlwaysOnTop(!!store.get("stayOnTop"));
   if (window.isAlwaysOnTop() || show) showWindow();
+
+  toggleFullScreen(!!store.get("fullScreen"));
 };
 
 const showWindow = () => {
@@ -555,15 +576,26 @@ const setWindowFocusTimer = () => {
   }, 110);
 };
 
-app.on("ready", () => {
+app.on("ready", async () => {
   checkAutoStart();
   useAutoUpdater();
+
   createTray();
+  // workaround for initial window misplacement due to traybounds being incorrect
+  while (tray.getBounds().x === 0 || process.uptime() >= 1) {
+    await delay(15);
+  }
+
   createMainWindow(!store.has("currentInstance"));
   startAvailabilityCheck();
 
   // register shortcut
   if (store.get("shortcutEnabled")) registerKeyboardShortcut();
+
+  globalShortcut.register("CommandOrControl+Alt+Return", () => {
+    toggleFullScreen();
+  });
+
   // disable hover for first start
   if (!store.has("currentInstance")) store.set("disableHover", true);
   // enable auto update by default
@@ -573,6 +605,13 @@ app.on("ready", () => {
 app.on("will-quit", () => {
   unregisterKeyboardShortcut();
 });
+
+const toggleFullScreen = (mode = !window.isFullScreen()) => {
+  store.set("fullScreen", mode);
+  window.setFullScreen(mode);
+  if (mode) window.setAlwaysOnTop(true);
+  else window.setAlwaysOnTop(store.get("stayOnTop"));
+};
 
 const currentInstance = (url = null) => {
   if (url) {
