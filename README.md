@@ -6,7 +6,7 @@ Desktop App (Windows / macOS / Linux) for [Home Assistant](https://www.home-assi
 
 ## Installation
 
-Just download the latest version for your platform from the [releases section](https://github.com/mrvnklm/homeassistant-desktop/releases) to install Home Assistant
+Just download the latest version for your platform from the [release section](https://github.com/mrvnklm/homeassistant-desktop/releases/latest) to install Home Assistant
 
 ## Usage / Features
 
