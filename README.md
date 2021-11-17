@@ -1,7 +1,3 @@
-# NOTE
-
-[[INFO] This app is still maintained, v2 will be coming within the next months. Feature requests?](https://github.com/mrvnklm/homeassistant-desktop/issues/42)
-
 # Home Assistant - Desktop
 
 Desktop App (Windows / macOS / Linux) for [Home Assistant](https://www.home-assistant.io/) built with [Electron](https://www.electronjs.org)
@@ -10,7 +6,7 @@ Desktop App (Windows / macOS / Linux) for [Home Assistant](https://www.home-assi
 
 ## Installation
 
-Just download the latest version for your platform from the [releases section](https://github.com/mrvnklm/homeassistant-desktop/releases) to install Home Assistant
+Just download the latest version for your platform from the [release section](https://github.com/mrvnklm/homeassistant-desktop/releases/latest) to install Home Assistant
 
 ## Usage / Features
 
@@ -22,7 +18,7 @@ Just download the latest version for your platform from the [releases section](h
 - fullscreen mode (Cmd/Ctrl + Alt + Return)
 - automatic updates (if not disabled in context menu)
 
-## Recent hanges:
+## Recent changes:
 
 - added fullscreen mode
 - added arm64 builds (experimental)
