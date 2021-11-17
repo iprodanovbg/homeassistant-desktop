@@ -1,102 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Home Assistant</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,user-scalable=no" />
-    <link href="assets/style.css" rel="stylesheet" />
-    <link href="assets/checkmark.css" rel="stylesheet" />
-    <script>
-      const { ipcRenderer } = require("electron");
-      const bonjour = require('bonjour')()
 
-       function showInstance(url) {
-         document.getElementById('availableInstancesContainer').style.display = "block"
-        const button = document.createElement("button")
-        button.onclick = () => addInstance(url)
-        button.classList.add("pure-material-button-contained")
-        button.textContent = url
-    document.getElementById('availableInstances').append(button)
-}
+<head>
+  <title>Home Assistant</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,user-scalable=no" />
+  <link href="assets/style.css" rel="stylesheet" />
+  <link href="assets/checkmark.css" rel="stylesheet" />
+  <script>
+    const { ipcRenderer } = require("electron");
+    const bonjour = require('bonjour')()
 
-      ipcRenderer.send("get-instances");
-      ipcRenderer.on("get-instances", (event, result) =>  {
-       let instances = result
-       
-        bonjour.find({ type: 'home-assistant' },  instance =>  {
+    function showInstance(url) {
+      document.getElementById('availableInstancesContainer').style.display = "block"
+      const button = document.createElement("button")
+      button.onclick = () => addInstance(url)
+      button.classList.add("pure-material-button-contained")
+      button.textContent = url
+      document.getElementById('availableInstances').append(button)
+    }
+
+    document.addEventListener("DOMContentLoaded", function (event) {
+      setTimeout(() => document.getElementById('url').focus(), 300);
+    });
+
+    ipcRenderer.send("get-instances");
+    ipcRenderer.on("get-instances", (event, result) => {
+      let instances = result
+
+      bonjour.find({ type: 'home-assistant' }, instance => {
         if (instances.indexOf(instance.txt.internal_url) === -1) showInstance(instance.txt.internal_url)
         if (instances.indexOf(instance.txt.external_url) === -1) showInstance(instance.txt.external_url)
-})
       })
+    })
 
-     function addInstance(url) {
+    function addInstance(url) {
       ipcRenderer.send("ha-instance", url);
-     }
+    }
 
-      ipcRenderer.send("ha-instance");
+    ipcRenderer.send("ha-instance");
 
-      let showCheckmark = false;
+    let showCheckmark = false;
 
-      ipcRenderer.on("ha-instance", function (event, url) {
-        if (showCheckmark) {
-          document
-            .getElementById("check-wrapper")
-            .addEventListener(
-              "animationend",
-              () => (window.location.href = url)
-            );
-        } else window.location.href = url;
-      });
+    ipcRenderer.on("ha-instance", function (event, url) {
+      if (showCheckmark) {
+        document
+          .getElementById("check-wrapper")
+          .addEventListener(
+            "animationend",
+            () => (window.location.href = url)
+          );
+      } else window.location.href = url;
+    });
 
-      function isValidUrl(string) {
-        try {
-          new URL(string);
-        } catch (_) {
-          return false;
-        }
-        return true;
+    function isValidUrl(string) {
+      try {
+        new URL(string);
+      } catch (_) {
+        return false;
+      }
+      return true;
+    }
+
+    function checkUrl() {
+      const url = document.getElementById("url").value;
+
+      if (!isValidUrl(url)) {
+        return;
       }
 
-      function checkUrl() {
-        const url = document.getElementById("url").value;
+      fetch(url + "/auth/providers")
+        .then(response => response.text())
+        .then(data => {
+          if (!data.includes('homeassistant')) return;
+          document.getElementById("url").value = url;
+          document.getElementById("url").disabled = true;
+          document.getElementById("check-wrapper").style.display = "block";
+          document.getElementById("url-wrapper").style.display = "none";
+          showCheckmark = true;
+          ipcRenderer.send("ha-instance", url);
+        }).catch((err) => { });
+    }
 
-        if (!isValidUrl(url)) {
-          return;
-        }
+    function showPlaceholder(status = true) {
+      if (status) document.getElementById("url").placeholder = 'e.g. http://hassio.local:8123';
+      else document.getElementById("url").placeholder = '';
+    }
+  </script>
+</head>
 
-        fetch(url + "/auth/providers")
-          .then((response) => {
-            if (response.ok) {
-              document.getElementById("url").value = url;
-              document.getElementById("url").disabled = true;
-              document.getElementById("check-wrapper").style.display = "block";
-              document.getElementById("url-wrapper").style.display = "none";
-              showCheckmark = true;
-              ipcRenderer.send("ha-instance", url);
-            }
-          })
-          .catch((err) => {});
-      }
-    </script>
-  </head>
-
-  <body>
-    <div class="container">
+<body>
+  <div class="container">
     <div class="content">
       <div class="center header">
         <img src="assets/favicon.png" height="52" /> Home Assistant
       </div>
       <div id="availableInstancesContainer" style="display:none;">
-      <div class="center">
-        <p>Available Instances: </p>
-      </div>
-      <div class="center">
-        <div id="availableInstances">
+        <div class="center">
+          <p>Available Instances: </p>
+        </div>
+        <div class="center">
+          <div id="availableInstances">
+          </div>
         </div>
       </div>
-    </div>
-      <div class="center">
-        <p>Add Instance via URL</p>
+      <div class="center" style="margin-top: 30px;">
+
       </div>
       <div class="center">
         <div id="check-wrapper" class="success-checkmark">
@@ -108,7 +117,8 @@
           </div>
         </div>
         <div id="url-wrapper" class="group">
-          <input type="url" required="required" id="url" onkeyup="checkUrl()" />
+          <input type="url" required="required" id="url" onblur="showPlaceholder(false)" onfocus="showPlaceholder()"
+            onkeyup="checkUrl()" />
           <span class="highlight"></span>
           <span class="bar"></span>
           <label>Home Assistant URL</label>
@@ -117,13 +127,11 @@
 
       <div class="center">
         <p>
-          <small class="grey"
-            >If the entered URL directs to a working Home Assistant instance,
-            you will be forwarded to the login page automatically.</small
-          >
+          <small class="grey">Your URL is checked and you will be forwarded to Home Assistant automatically.</small>
         </p>
       </div>
     </div>
-    </div>
-  </body>
+  </div>
+</body>
+
 </html>
