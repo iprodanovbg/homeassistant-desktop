@@ -315,7 +315,7 @@ const getMenu = () => {
     {
       label: "Use Fullscreen",
       type: "checkbox",
-      checked: window.isFullScreen(),
+      checked: store.get("fullScreen"),
       accelerator: "CommandOrControl+Alt+Return",
       click: () => {
         toggleFullScreen();
