@@ -2,7 +2,7 @@
   "name": "homeassistant-desktop",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mrvnklm/homeassistant-desktop"
+    "url": "https://github.com/iprodanovbg/homeassistant-desktop"
   },
   "version": "1.4.10",
   "description": "Desktop App (Windows / macOS / Linux) for Home Assistant built with Electron",
@@ -29,6 +29,17 @@
   },
   "build": {
     "appId": "com.electron.homeassistant-desktop",
-    "productName": "Home Assistant"
+    "artifactName": "${productName}-v${version}-${os}-${arch}.${ext}",
+    "productName": "Home Assistant Desktop",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "zip",
+        "dmg"
+      ],
+      "extendInfo": {
+        "LSUIElement": true
+      }
+    }
   }
 }
