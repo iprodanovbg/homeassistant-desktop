@@ -420,7 +420,7 @@ function createMainWindow(show = false) {
     minWidth: 420,
     minHeight: 460,
     show: false,
-    skipTaskbar: true,
+    skipTaskbar: !show,
     autoHideMenuBar: true,
     frame: false,
     webPreferences: {
@@ -536,6 +536,7 @@ function showWindow() {
     mainWindow.show();
     mainWindow.focus();
     mainWindow.setVisibleOnAllWorkspaces(false); // disable all screen behavior
+    mainWindow.setSkipTaskbar(!config.get("detachedMode"));
   }
 }
 
