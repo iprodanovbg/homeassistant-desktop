@@ -551,6 +551,10 @@ function createTray() {
   tray.on('click', () => {
     if (mainWindow.isVisible()) {
       mainWindow.hide();
+
+      if (process.platform === 'darwin') {
+        app.dock.hide();
+      }
     } else {
       showWindow();
     }
