@@ -13,9 +13,9 @@ const {
 const { autoUpdater } = require('electron-updater');
 const AutoLaunch = require('auto-launch');
 const Positioner = require('electron-traywindow-positioner');
-const Store = require('electron-store');
 const Bonjour = require('bonjour-service');
 const bonjour = new Bonjour.Bonjour();
+const config = require('./config');
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 app.allowRendererProcessReuse = true;
@@ -36,7 +36,6 @@ if (process.platform === 'darwin') {
   app.dock.hide();
 }
 
-const store = new Store();
 const autoLauncher = new AutoLaunch({ name: 'Home Assistant Desktop' });
 
 const indexFile = `file://${__dirname}/web/index.html`;
@@ -72,12 +71,12 @@ function useAutoUpdater() {
   });
 
   setInterval(() => {
-    if (store.get('autoUpdate')) {
+    if (config.get('autoUpdate')) {
       autoUpdater.checkForUpdates();
     }
   }, 1000 * 60 * 60);
 
-  if (store.get('autoUpdate')) {
+  if (config.get('autoUpdate')) {
     autoUpdater.checkForUpdates();
   }
 }
@@ -105,7 +104,7 @@ function startAvailabilityCheck() {
       clearInterval(interval);
       showError(true);
 
-      if (store.get('automaticSwitching')) {
+      if (config.get('automaticSwitching')) {
         checkForAvailableInstance();
       }
     });
@@ -158,7 +157,7 @@ function changePosition() {
 }
 
 function checkForAvailableInstance() {
-  const instances = store.get('allInstances');
+  const instances = config.get('allInstances');
 
   if (instances?.length > 1) {
     bonjour.find({ type: 'home-assistant' }, (instance) => {
@@ -204,7 +203,7 @@ function getMenu() {
     },
   ];
 
-  const allInstances = store.get('allInstances');
+  const allInstances = config.get('allInstances');
 
   if (allInstances) {
     allInstances.forEach((e) => {
@@ -227,7 +226,7 @@ function getMenu() {
       {
         label: 'Add another Instance...',
         click: () => {
-          store.delete('currentInstance');
+          config.delete('currentInstance');
           window.loadURL(indexFile);
           window.show();
         },
@@ -235,10 +234,10 @@ function getMenu() {
       {
         label: 'Automatic Switching',
         type: 'checkbox',
-        enabled: store.has('allInstances') && store.get('allInstances').length > 1,
-        checked: store.get('automaticSwitching'),
+        enabled: config.has('allInstances') && config.get('allInstances').length > 1,
+        checked: config.get('automaticSwitching'),
         click: () => {
-          store.set('automaticSwitching', !store.get('automaticSwitching'));
+          config.set('automaticSwitching', !config.get('automaticSwitching'));
         },
       },
     );
@@ -268,21 +267,21 @@ function getMenu() {
     },
     {
       label: 'Hover to Show',
-      visible: process.platform !== 'linux' && !store.get('detachedMode'),
-      enabled: !store.get('detachedMode'),
+      visible: process.platform !== 'linux' && !config.get('detachedMode'),
+      enabled: !config.get('detachedMode'),
       type: 'checkbox',
-      checked: !store.get('disableHover'),
+      checked: !config.get('disableHover'),
       click: () => {
-        store.set('disableHover', !store.get('disableHover'));
+        config.set('disableHover', !config.get('disableHover'));
       },
     },
     {
       label: 'Stay on Top',
       type: 'checkbox',
-      checked: store.get('stayOnTop'),
+      checked: config.get('stayOnTop'),
       click: () => {
-        store.set('stayOnTop', !store.get('stayOnTop'));
-        window.setAlwaysOnTop(store.get('stayOnTop'));
+        config.set('stayOnTop', !config.get('stayOnTop'));
+        window.setAlwaysOnTop(config.get('stayOnTop'));
 
         if (window.isAlwaysOnTop()) {
           showWindow();
@@ -307,11 +306,11 @@ function getMenu() {
       label: 'Enable Shortcut',
       type: 'checkbox',
       accelerator: 'CommandOrControl+Alt+X',
-      checked: store.get('shortcutEnabled'),
+      checked: config.get('shortcutEnabled'),
       click: () => {
-        store.set('shortcutEnabled', !store.get('shortcutEnabled'));
+        config.set('shortcutEnabled', !config.get('shortcutEnabled'));
 
-        if (store.get('shortcutEnabled')) {
+        if (config.get('shortcutEnabled')) {
           registerKeyboardShortcut();
         } else {
           unregisterKeyboardShortcut();
@@ -324,17 +323,17 @@ function getMenu() {
     {
       label: 'Use detached Window',
       type: 'checkbox',
-      checked: store.get('detachedMode'),
+      checked: config.get('detachedMode'),
       click: () => {
-        store.set('detachedMode', !store.get('detachedMode'));
+        config.set('detachedMode', !config.get('detachedMode'));
         window.hide();
-        createMainWindow(store.get('detachedMode'));
+        createMainWindow(config.get('detachedMode'));
       },
     },
     {
       label: 'Use Fullscreen',
       type: 'checkbox',
-      checked: store.get('fullScreen'),
+      checked: config.get('fullScreen'),
       accelerator: 'CommandOrControl+Alt+Return',
       click: () => {
         toggleFullScreen();
@@ -350,9 +349,9 @@ function getMenu() {
     {
       label: 'Automatic Updates',
       type: 'checkbox',
-      checked: store.get('autoUpdate'),
+      checked: config.get('autoUpdate'),
       click: () => {
-        store.set('autoUpdate', !store.get('autoUpdate'));
+        config.set('autoUpdate', !config.get('autoUpdate'));
       },
     },
     {
@@ -382,7 +381,7 @@ function getMenu() {
           })
           .then((res) => {
             if (res.response === 0) {
-              store.clear();
+              config.clear();
               window.webContents.session.clearCache();
               window.webContents.session.clearStorageData();
               app.relaunch();
@@ -390,11 +389,11 @@ function getMenu() {
             }
 
             if (res.response === 1) {
-              store.delete('windowSizeDetached');
-              store.delete('windowSize');
-              store.delete('windowPosition');
-              store.delete('fullScreen');
-              store.delete('detachedMode');
+              config.delete('windowSizeDetached');
+              config.delete('windowSize');
+              config.delete('windowPosition');
+              config.delete('fullScreen');
+              config.delete('detachedMode');
               app.relaunch();
               app.exit();
             }
@@ -441,7 +440,7 @@ function createMainWindow(show = false) {
   window.webContents.on('did-finish-load', function () {
     window.webContents.insertCSS('::-webkit-scrollbar { display: none; } body { -webkit-user-select: none; }');
 
-    if (store.get('detachedMode') && process.platform === 'darwin') {
+    if (config.get('detachedMode') && process.platform === 'darwin') {
       window.webContents.insertCSS('body { -webkit-app-region: drag; }');
     }
 
@@ -449,22 +448,22 @@ function createMainWindow(show = false) {
     // window.webContents.executeJavaScript(code);
   });
 
-  if (store.get('detachedMode')) {
-    if (store.has('windowPosition')) {
-      window.setSize(...store.get('windowSizeDetached'));
+  if (config.get('detachedMode')) {
+    if (config.has('windowPosition')) {
+      window.setSize(...config.get('windowSizeDetached'));
     } else {
-      store.set('windowPosition', window.getPosition());
+      config.set('windowPosition', window.getPosition());
     }
 
-    if (store.has('windowSizeDetached')) {
-      window.setPosition(...store.get('windowPosition'));
+    if (config.has('windowSizeDetached')) {
+      window.setPosition(...config.get('windowPosition'));
     } else {
-      store.set('windowSizeDetached', window.getSize());
+      config.set('windowSizeDetached', window.getSize());
     }
-  } else if (store.has('windowSize')) {
-    window.setSize(...store.get('windowSize'));
+  } else if (config.has('windowSize')) {
+    window.setSize(...config.get('windowSize'));
   } else {
-    store.set('windowSize', window.getSize());
+    config.set('windowSize', window.getSize());
   }
 
   window.on('resize', (e) => {
@@ -473,31 +472,31 @@ function createMainWindow(show = false) {
       return e;
     }
 
-    if (!store.get('disableHover') || resizeEvent) {
-      store.set('disableHover', true);
+    if (!config.get('disableHover') || resizeEvent) {
+      config.set('disableHover', true);
       resizeEvent = e;
       setTimeout(() => {
         if (resizeEvent === e) {
-          store.set('disableHover', false);
+          config.set('disableHover', false);
           resizeEvent = false;
         }
       }, 600);
     }
 
-    if (store.get('detachedMode')) {
-      store.set('windowSizeDetached', window.getSize());
+    if (config.get('detachedMode')) {
+      config.set('windowSizeDetached', window.getSize());
     } else {
       if (process.platform !== 'linux') {
         changePosition();
       }
 
-      store.set('windowSize', window.getSize());
+      config.set('windowSize', window.getSize());
     }
   });
 
   window.on('move', () => {
-    if (store.get('detachedMode')) {
-      store.set('windowPosition', window.getPosition());
+    if (config.get('detachedMode')) {
+      config.set('windowPosition', window.getPosition());
     }
   });
 
@@ -509,22 +508,22 @@ function createMainWindow(show = false) {
   });
 
   window.on('blur', () => {
-    if (!store.get('detachedMode') && !window.isAlwaysOnTop()) {
+    if (!config.get('detachedMode') && !window.isAlwaysOnTop()) {
       window.hide();
     }
   });
 
-  window.setAlwaysOnTop(!!store.get('stayOnTop'));
+  window.setAlwaysOnTop(!!config.get('stayOnTop'));
 
   if (window.isAlwaysOnTop() || show) {
     showWindow();
   }
 
-  toggleFullScreen(!!store.get('fullScreen'));
+  toggleFullScreen(!!config.get('fullScreen'));
 }
 
 function showWindow() {
-  if (!store.get('detachedMode')) {
+  if (!config.get('detachedMode')) {
     changePosition();
   }
 
@@ -550,7 +549,7 @@ function createTray() {
   });
 
   tray.on('right-click', () => {
-    if (!store.get('detachedMode')) {
+    if (!config.get('detachedMode')) {
       window.hide();
     }
 
@@ -560,7 +559,7 @@ function createTray() {
   let timer = undefined;
 
   tray.on('mouse-move', () => {
-    if (store.get('detachedMode') || window.isAlwaysOnTop() || store.get('disableHover')) {
+    if (config.get('detachedMode') || window.isAlwaysOnTop() || config.get('disableHover')) {
       return;
     }
 
@@ -607,34 +606,34 @@ function setWindowFocusTimer() {
 }
 
 function toggleFullScreen(mode = !window.isFullScreen()) {
-  store.set('fullScreen', mode);
+  config.set('fullScreen', mode);
   window.setFullScreen(mode);
 
   if (mode) {
     window.setAlwaysOnTop(true);
   } else {
-    window.setAlwaysOnTop(store.get('stayOnTop'));
+    window.setAlwaysOnTop(config.get('stayOnTop'));
   }
 }
 
 function currentInstance(url = null) {
   if (url) {
-    store.set('currentInstance', store.get('allInstances').indexOf(url));
+    config.set('currentInstance', config.get('allInstances').indexOf(url));
   }
 
-  if (store.has('currentInstance')) {
-    return store.get('allInstances')[ store.get('currentInstance') ];
+  if (config.has('currentInstance')) {
+    return config.get('allInstances')[ config.get('currentInstance') ];
   }
 
   return false;
 }
 
 function addInstance(url) {
-  if (!store.has('allInstances')) {
-    store.set('allInstances', []);
+  if (!config.has('allInstances')) {
+    config.set('allInstances', []);
   }
 
-  let instances = store.get('allInstances');
+  let instances = config.get('allInstances');
 
   if (instances.find((e) => e === url)) {
     currentInstance(url);
@@ -644,11 +643,11 @@ function addInstance(url) {
 
   // active hover by default after adding first instance
   if (!instances.length) {
-    store.set('disableHover', false);
+    config.set('disableHover', false);
   }
 
   instances.push(url);
-  store.set('allInstances', instances);
+  config.set('allInstances', instances);
   currentInstance(url);
 }
 
@@ -671,7 +670,7 @@ app.on('ready', async () => {
   while (tray.getBounds().x === 0 && process.uptime() <= 1) {
     await delay(15);
   }
-  createMainWindow(!store.has('currentInstance'));
+  createMainWindow(!config.has('currentInstance'));
 
   if (process.platform === 'linux') {
     tray.setContextMenu(getMenu());
@@ -680,7 +679,7 @@ app.on('ready', async () => {
   startAvailabilityCheck();
 
   // register shortcut
-  if (store.get('shortcutEnabled')) {
+  if (config.get('shortcutEnabled')) {
     registerKeyboardShortcut();
   }
 
@@ -689,13 +688,13 @@ app.on('ready', async () => {
   });
 
   // disable hover for first start
-  if (!store.has('currentInstance')) {
-    store.set('disableHover', true);
+  if (!config.has('currentInstance')) {
+    config.set('disableHover', true);
   }
 
   // enable auto update by default
-  if (!store.has('autoUpdate')) {
-    store.set('autoUpdate', true);
+  if (!config.has('autoUpdate')) {
+    config.set('autoUpdate', true);
   }
 });
 
@@ -710,7 +709,7 @@ app.on('window-all-closed', () => {
 });
 
 ipcMain.on('get-instances', (event) => {
-  event.reply('get-instances', store.get('allInstances') || []);
+  event.reply('get-instances', config.get('allInstances') || []);
 });
 
 ipcMain.on('ha-instance', (event, url) => {
