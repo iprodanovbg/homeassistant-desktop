@@ -17,20 +17,6 @@ const Bonjour = require('bonjour-service');
 const bonjour = new Bonjour.Bonjour();
 const logger = require('electron-log');
 const config = require('./config');
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-app.allowRendererProcessReuse = true;
-
-// prevent multiple instances
-if (!app.requestSingleInstanceLock()) {
-  app.quit();
-} else {
-  app.on('second-instance', () => {
-    if (window) {
-      showWindow();
-    }
-  });
-}
 
 autoUpdater.logger = logger;
 logger.catchErrors();
@@ -52,11 +38,13 @@ const errorFile = `file://${__dirname}/web/error.html`;
 let autostartEnabled = false;
 let forceQuit = false;
 let resizeEvent = false;
+let mainWindow;
+let tray;
 
 function registerKeyboardShortcut() {
   globalShortcut.register('CommandOrControl+Alt+X', () => {
-    if (window.isVisible()) {
-      window.hide();
+    if (mainWindow.isVisible()) {
+      mainWindow.hide();
     } else {
       showWindow();
     }
@@ -128,7 +116,7 @@ function startAvailabilityCheck() {
 
 function changePosition() {
   const trayBounds = tray.getBounds();
-  const windowBounds = window.getBounds();
+  const windowBounds = mainWindow.getBounds();
   const displayWorkArea = screen.getDisplayNearestPoint({
     x: trayBounds.x,
     y: trayBounds.y,
@@ -142,11 +130,11 @@ function changePosition() {
     };
 
     if (trayBounds.x + (trayBounds.width + windowBounds.width) / 2 < displayWorkArea.width) {
-      Positioner.position(window, trayBounds, alignment);
+      Positioner.position(mainWindow, trayBounds, alignment);
     } else {
-      const { y } = Positioner.calculate(window.getBounds(), trayBounds, alignment);
+      const { y } = Positioner.calculate(mainWindow.getBounds(), trayBounds, alignment);
 
-      window.setPosition(
+      mainWindow.setPosition(
         displayWorkArea.width - windowBounds.width + displayWorkArea.x,
         y + (taskBarPosition === 'bottom' && displayWorkArea.y),
         false,
@@ -159,11 +147,11 @@ function changePosition() {
     };
 
     if (trayBounds.y + (trayBounds.height + windowBounds.height) / 2 < displayWorkArea.height) {
-      const { x, y } = Positioner.calculate(window.getBounds(), trayBounds, alignment);
-      window.setPosition(x + (taskBarPosition === 'right' && displayWorkArea.x), y);
+      const { x, y } = Positioner.calculate(mainWindow.getBounds(), trayBounds, alignment);
+      mainWindow.setPosition(x + (taskBarPosition === 'right' && displayWorkArea.x), y);
     } else {
-      const { x } = Positioner.calculate(window.getBounds(), trayBounds, alignment);
-      window.setPosition(x, displayWorkArea.y + displayWorkArea.height - windowBounds.height, false);
+      const { x } = Positioner.calculate(mainWindow.getBounds(), trayBounds, alignment);
+      mainWindow.setPosition(x, displayWorkArea.y + displayWorkArea.height - windowBounds.height, false);
     }
   }
 }
@@ -225,8 +213,8 @@ function getMenu() {
         checked: currentInstance() === e,
         click: () => {
           currentInstance(e);
-          window.loadURL(e);
-          window.show();
+          mainWindow.loadURL(e);
+          mainWindow.show();
         },
       });
     });
@@ -239,8 +227,8 @@ function getMenu() {
         label: 'Add another Instance...',
         click: () => {
           config.delete('currentInstance');
-          window.loadURL(indexFile);
-          window.show();
+          mainWindow.loadURL(indexFile);
+          mainWindow.show();
         },
       },
       {
@@ -262,8 +250,8 @@ function getMenu() {
       label: 'Show/Hide Window',
       visible: process.platform === 'linux',
       click: () => {
-        if (window.isVisible()) {
-          window.hide();
+        if (mainWindow.isVisible()) {
+          mainWindow.hide();
         } else {
           showWindow();
         }
@@ -293,9 +281,9 @@ function getMenu() {
       checked: config.get('stayOnTop'),
       click: () => {
         config.set('stayOnTop', !config.get('stayOnTop'));
-        window.setAlwaysOnTop(config.get('stayOnTop'));
+        mainWindow.setAlwaysOnTop(config.get('stayOnTop'));
 
-        if (window.isAlwaysOnTop()) {
+        if (mainWindow.isAlwaysOnTop()) {
           showWindow();
         }
       },
@@ -338,7 +326,7 @@ function getMenu() {
       checked: config.get('detachedMode'),
       click: () => {
         config.set('detachedMode', !config.get('detachedMode'));
-        window.hide();
+        mainWindow.hide();
         createMainWindow(config.get('detachedMode'));
       },
     },
@@ -378,9 +366,9 @@ function getMenu() {
     {
       label: 'Reload Window',
       click: () => {
-        window.reload();
-        window.show();
-        window.focus();
+        mainWindow.reload();
+        mainWindow.show();
+        mainWindow.focus();
       },
     },
     {
@@ -394,8 +382,8 @@ function getMenu() {
           .then((res) => {
             if (res.response === 0) {
               config.clear();
-              window.webContents.session.clearCache();
-              window.webContents.session.clearStorageData();
+              mainWindow.webContents.session.clearCache();
+              mainWindow.webContents.session.clearStorageData();
               app.relaunch();
               app.exit();
             }
@@ -426,9 +414,11 @@ function getMenu() {
 }
 
 function createMainWindow(show = false) {
-  window = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 420,
-    height: 420,
+    height: 460,
+    minWidth: 420,
+    minHeight: 460,
     show: false,
     skipTaskbar: true,
     autoHideMenuBar: true,
@@ -439,48 +429,50 @@ function createMainWindow(show = false) {
     },
   });
 
-  // window.webContents.openDevTools();
-  window.loadURL(indexFile);
+  // mainWindow.webContents.openDevTools();
+  mainWindow.loadURL(indexFile);
+
+  createTray();
 
   // open external links in default browser
-  window.webContents.setWindowOpenHandler(({ url }) => {
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
   });
 
   // hide scrollbar
-  window.webContents.on('did-finish-load', function () {
-    window.webContents.insertCSS('::-webkit-scrollbar { display: none; } body { -webkit-user-select: none; }');
+  mainWindow.webContents.on('did-finish-load', function () {
+    mainWindow.webContents.insertCSS('::-webkit-scrollbar { display: none; } body { -webkit-user-select: none; }');
 
     if (config.get('detachedMode') && process.platform === 'darwin') {
-      window.webContents.insertCSS('body { -webkit-app-region: drag; }');
+      mainWindow.webContents.insertCSS('body { -webkit-app-region: drag; }');
     }
 
     // let code = `document.addEventListener('mousemove', () => { ipcRenderer.send('mousemove'); });`;
-    // window.webContents.executeJavaScript(code);
+    // mainWindow.webContents.executeJavaScript(code);
   });
 
   if (config.get('detachedMode')) {
     if (config.has('windowPosition')) {
-      window.setSize(...config.get('windowSizeDetached'));
+      mainWindow.setSize(...config.get('windowSizeDetached'));
     } else {
-      config.set('windowPosition', window.getPosition());
+      config.set('windowPosition', mainWindow.getPosition());
     }
 
     if (config.has('windowSizeDetached')) {
-      window.setPosition(...config.get('windowPosition'));
+      mainWindow.setPosition(...config.get('windowPosition'));
     } else {
-      config.set('windowSizeDetached', window.getSize());
+      config.set('windowSizeDetached', mainWindow.getSize());
     }
   } else if (config.has('windowSize')) {
-    window.setSize(...config.get('windowSize'));
+    mainWindow.setSize(...config.get('windowSize'));
   } else {
-    config.set('windowSize', window.getSize());
+    config.set('windowSize', mainWindow.getSize());
   }
 
-  window.on('resize', (e) => {
+  mainWindow.on('resize', (e) => {
     // ignore resize event when using fullscreen mode
-    if (window.isFullScreen()) {
+    if (mainWindow.isFullScreen()) {
       return e;
     }
 
@@ -496,38 +488,38 @@ function createMainWindow(show = false) {
     }
 
     if (config.get('detachedMode')) {
-      config.set('windowSizeDetached', window.getSize());
+      config.set('windowSizeDetached', mainWindow.getSize());
     } else {
       if (process.platform !== 'linux') {
         changePosition();
       }
 
-      config.set('windowSize', window.getSize());
+      config.set('windowSize', mainWindow.getSize());
     }
   });
 
-  window.on('move', () => {
+  mainWindow.on('move', () => {
     if (config.get('detachedMode')) {
-      config.set('windowPosition', window.getPosition());
+      config.set('windowPosition', mainWindow.getPosition());
     }
   });
 
-  window.on('close', (e) => {
+  mainWindow.on('close', (e) => {
     if (!forceQuit) {
-      window.hide();
+      mainWindow.hide();
       e.preventDefault();
     }
   });
 
-  window.on('blur', () => {
-    if (!config.get('detachedMode') && !window.isAlwaysOnTop()) {
-      window.hide();
+  mainWindow.on('blur', () => {
+    if (!config.get('detachedMode') && !mainWindow.isAlwaysOnTop()) {
+      mainWindow.hide();
     }
   });
 
-  window.setAlwaysOnTop(!!config.get('stayOnTop'));
+  mainWindow.setAlwaysOnTop(!!config.get('stayOnTop'));
 
-  if (window.isAlwaysOnTop() || show) {
+  if (mainWindow.isAlwaysOnTop() || show) {
     showWindow();
   }
 
@@ -539,22 +531,26 @@ function showWindow() {
     changePosition();
   }
 
-  if (!window.isVisible()) {
-    window.setVisibleOnAllWorkspaces(true); // put the window on all screens
-    window.show();
-    window.focus();
-    window.setVisibleOnAllWorkspaces(false); // disable all screen behavior
+  if (!mainWindow.isVisible()) {
+    mainWindow.setVisibleOnAllWorkspaces(true); // put the window on all screens
+    mainWindow.show();
+    mainWindow.focus();
+    mainWindow.setVisibleOnAllWorkspaces(false); // disable all screen behavior
   }
 }
 
 function createTray() {
+  if (tray instanceof Tray) {
+    return;
+  }
+
   tray = new Tray(
     ['win32', 'linux'].includes(process.platform) ? `${__dirname}/assets/IconWin.png` : `${__dirname}/assets/IconTemplate.png`,
   );
 
   tray.on('click', () => {
-    if (window.isVisible()) {
-      window.hide();
+    if (mainWindow.isVisible()) {
+      mainWindow.hide();
     } else {
       showWindow();
     }
@@ -562,7 +558,7 @@ function createTray() {
 
   tray.on('right-click', () => {
     if (!config.get('detachedMode')) {
-      window.hide();
+      mainWindow.hide();
     }
 
     tray.popUpContextMenu(getMenu());
@@ -571,11 +567,11 @@ function createTray() {
   let timer = undefined;
 
   tray.on('mouse-move', () => {
-    if (config.get('detachedMode') || window.isAlwaysOnTop() || config.get('disableHover')) {
+    if (config.get('detachedMode') || mainWindow.isAlwaysOnTop() || config.get('disableHover')) {
       return;
     }
 
-    if (!window.isVisible()) {
+    if (!mainWindow.isVisible()) {
       showWindow();
     }
 
@@ -600,8 +596,8 @@ function createTray() {
 function setWindowFocusTimer() {
   setTimeout(() => {
     let mousePos = screen.getCursorScreenPoint();
-    let windowPosition = window.getPosition();
-    let windowSize = window.getSize();
+    let windowPosition = mainWindow.getPosition();
+    let windowSize = mainWindow.getSize();
 
     if (
       !resizeEvent &&
@@ -610,21 +606,21 @@ function setWindowFocusTimer() {
         !(mousePos.y >= windowPosition[ 1 ] && mousePos.y <= windowPosition[ 1 ] + windowSize[ 1 ])
       )
     ) {
-      window.hide();
+      mainWindow.hide();
     } else {
       setWindowFocusTimer();
     }
   }, 110);
 }
 
-function toggleFullScreen(mode = !window.isFullScreen()) {
+function toggleFullScreen(mode = !mainWindow.isFullScreen()) {
   config.set('fullScreen', mode);
-  window.setFullScreen(mode);
+  mainWindow.setFullScreen(mode);
 
   if (mode) {
-    window.setAlwaysOnTop(true);
+    mainWindow.setAlwaysOnTop(true);
   } else {
-    window.setAlwaysOnTop(config.get('stayOnTop'));
+    mainWindow.setAlwaysOnTop(config.get('stayOnTop'));
   }
 }
 
@@ -664,24 +660,19 @@ function addInstance(url) {
 }
 
 function showError(isError) {
-  if (!isError && window.webContents.getURL().includes('error.html')) {
-    window.loadURL(indexFile);
+  if (!isError && mainWindow.webContents.getURL().includes('error.html')) {
+    mainWindow.loadURL(indexFile);
   }
 
-  if (isError && currentInstance() && !window.webContents.getURL().includes('error.html')) {
-    window.loadURL(errorFile);
+  if (isError && currentInstance() && !mainWindow.webContents.getURL().includes('error.html')) {
+    mainWindow.loadURL(errorFile);
   }
 }
 
-app.on('ready', async () => {
+app.whenReady().then(() => {
   useAutoUpdater();
   checkAutoStart();
 
-  createTray();
-  // workaround for initial window misplacement due to traybounds being incorrect
-  while (tray.getBounds().x === 0 && process.uptime() <= 1) {
-    await delay(15);
-  }
   createMainWindow(!config.has('currentInstance'));
 
   if (process.platform === 'linux') {
