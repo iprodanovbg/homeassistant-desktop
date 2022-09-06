@@ -14,7 +14,8 @@ const { autoUpdater } = require('electron-updater');
 const AutoLaunch = require('auto-launch');
 const Positioner = require('electron-traywindow-positioner');
 const Store = require('electron-store');
-const bonjour = require('bonjour')();
+const Bonjour = require('bonjour-service');
+const bonjour = new Bonjour.Bonjour();
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 app.allowRendererProcessReuse = true;
@@ -112,7 +113,7 @@ function startAvailabilityCheck() {
   }
 
   interval = setInterval(availabilityCheck, 3000);
-};
+}
 
 function changePosition() {
   const trayBounds = tray.getBounds();
@@ -533,7 +534,7 @@ function showWindow() {
     window.focus();
     window.setVisibleOnAllWorkspaces(false); // disable all screen behavior
   }
-};
+}
 
 function createTray() {
   tray = new Tray(

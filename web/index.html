@@ -9,7 +9,8 @@
   <link href="assets/checkmark.css" rel="stylesheet" />
   <script>
     const { ipcRenderer } = require('electron');
-    const bonjour = require('bonjour')()
+    const Bonjour = require('bonjour-service');
+    const bonjour = new Bonjour.Bonjour();
 
     function showInstance(url) {
       if (url === '') {
