@@ -7,6 +7,7 @@
   height: 80px;
   margin: 0 auto;
 }
+
 .success-checkmark .check-icon {
   width: 80px;
   height: 80px;
@@ -15,6 +16,7 @@
   box-sizing: content-box;
   border: 4px solid #4caf50;
 }
+
 .success-checkmark .check-icon::before {
   top: 3px;
   left: -2px;
@@ -22,6 +24,7 @@
   transform-origin: 100% 50%;
   border-radius: 100px 0 0 100px;
 }
+
 .success-checkmark .check-icon::after {
   top: 0;
   left: 30px;
@@ -30,6 +33,7 @@
   border-radius: 0 100px 100px 0;
   animation: rotate-circle 4.25s ease-in;
 }
+
 .success-checkmark .check-icon::before,
 .success-checkmark .check-icon::after {
   content: "";
@@ -38,6 +42,7 @@
   background: #ffffff;
   transform: rotate(-45deg);
 }
+
 .success-checkmark .check-icon .icon-line {
   height: 5px;
   background-color: #4caf50;
@@ -46,6 +51,7 @@
   position: absolute;
   z-index: 10;
 }
+
 .success-checkmark .check-icon .icon-line.line-tip {
   top: 46px;
   left: 14px;
@@ -53,6 +59,7 @@
   transform: rotate(45deg);
   animation: icon-line-tip 0.75s;
 }
+
 .success-checkmark .check-icon .icon-line.line-long {
   top: 38px;
   right: 8px;
@@ -60,6 +67,7 @@
   transform: rotate(-45deg);
   animation: icon-line-long 0.75s;
 }
+
 .success-checkmark .check-icon .icon-circle {
   top: -4px;
   left: -4px;
@@ -71,6 +79,7 @@
   box-sizing: content-box;
   border: 4px solid rgba(76, 175, 80, 0.5);
 }
+
 .success-checkmark .check-icon .icon-fix {
   top: 8px;
   width: 5px;
@@ -96,6 +105,7 @@
     transform: rotate(-405deg);
   }
 }
+
 @keyframes icon-line-tip {
   0% {
     width: 0;
@@ -123,6 +133,7 @@
     top: 45px;
   }
 }
+
 @keyframes icon-line-long {
   0% {
     width: 0;
@@ -136,7 +147,7 @@
   }
   84% {
     width: 55px;
-    right: 0px;
+    right: 0;
     top: 35px;
   }
   100% {
