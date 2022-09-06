@@ -15,6 +15,7 @@ const AutoLaunch = require('auto-launch');
 const Positioner = require('electron-traywindow-positioner');
 const Bonjour = require('bonjour-service');
 const bonjour = new Bonjour.Bonjour();
+const logger = require('electron-log');
 const config = require('./config');
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -30,6 +31,13 @@ if (!app.requestSingleInstanceLock()) {
     }
   });
 }
+
+autoUpdater.logger = logger;
+logger.catchErrors();
+logger.info(app.name + ' started');
+logger.info('Platform: ' + process.platform);
+
+app.disableHardwareAcceleration();
 
 // hide dock icon on macOS
 if (process.platform === 'darwin') {
@@ -61,8 +69,8 @@ function unregisterKeyboardShortcut() {
 
 function useAutoUpdater() {
   autoUpdater.on('error', (message) => {
-    console.error('There was a problem updating the application');
-    console.error(message);
+    logger.error('There was a problem updating the application');
+    logger.error(message);
   });
 
   autoUpdater.on('update-downloaded', () => {
@@ -88,7 +96,7 @@ function checkAutoStart() {
       autostartEnabled = isEnabled;
     })
     .catch((err) => {
-      console.error(err);
+      logger.error(err);
     });
 }
 
@@ -98,9 +106,13 @@ function startAvailabilityCheck() {
   function availabilityCheck() {
     const request = net.request(`${currentInstance()}/auth/providers`);
     request.on('response', (response) => {
+      if (response.statusCode !== 200) {
+        logger.error('Error: ' + response);
+      }
       showError(response.statusCode !== 200);
     });
     request.on('error', (error) => {
+      logger.error(error);
       clearInterval(interval);
       showError(true);
 
