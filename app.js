@@ -115,10 +115,6 @@ function availabilityCheck() {
     if (config.get('automaticSwitching')) {
       checkForAvailableInstance();
     }
-
-    await delay(60 * 1000);
-
-    reinitMainWindow();
   });
 
   request.end();
