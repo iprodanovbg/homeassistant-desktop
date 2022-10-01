@@ -21,10 +21,8 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 autoUpdater.logger = logger;
 logger.catchErrors();
-logger.info(app.name + ' started');
-logger.info('Platform: ' + process.platform);
-
-app.disableHardwareAcceleration();
+logger.info(`${app.name} started`);
+logger.info(`Platform: ${process.platform} ${process.arch}`);
 
 // hide dock icon on macOS
 if (process.platform === 'darwin') {
@@ -41,6 +39,7 @@ let forceQuit = false;
 let resizeEvent = false;
 let mainWindow;
 let tray;
+let updateCheckerInterval;
 let availabilityCheckerInterval;
 
 function registerKeyboardShortcut() {
@@ -68,13 +67,11 @@ function useAutoUpdater() {
     autoUpdater.quitAndInstall();
   });
 
-  setInterval(() => {
-    if (config.get('autoUpdate')) {
+  if (!updateCheckerInterval && config.get('autoUpdate')) {
+    updateCheckerInterval = setInterval(() => {
       autoUpdater.checkForUpdates();
-    }
-  }, 1000 * 60 * 60);
+    }, 1000 * 60 * 60 * 4);
 
-  if (config.get('autoUpdate')) {
     autoUpdater.checkForUpdates();
   }
 }
@@ -357,7 +354,15 @@ function getMenu() {
       type: 'checkbox',
       checked: config.get('autoUpdate'),
       click: () => {
-        config.set('autoUpdate', !config.get('autoUpdate'));
+        const currentStatus = config.get('autoUpdate');
+        config.set('autoUpdate', !currentStatus);
+
+        if (currentStatus) {
+          clearInterval(updateCheckerInterval);
+          updateCheckerInterval = null;
+        } else {
+          useAutoUpdater();
+        }
       },
     },
     {
