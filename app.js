@@ -17,6 +17,7 @@ const Bonjour = require('bonjour-service');
 const bonjour = new Bonjour.Bonjour();
 const logger = require('electron-log');
 const config = require('./config');
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 autoUpdater.logger = logger;
 logger.catchErrors();
@@ -114,6 +115,10 @@ function availabilityCheck() {
     if (config.get('automaticSwitching')) {
       checkForAvailableInstance();
     }
+
+    await delay(60 * 1000);
+
+    reinitMainWindow();
   });
 
   request.end();
@@ -531,6 +536,18 @@ function createMainWindow(show = false) {
   toggleFullScreen(!!config.get('fullScreen'));
 }
 
+function reinitMainWindow() {
+  logger.info('Re-initialized main window');
+  mainWindow.destroy();
+  mainWindow = null;
+  createMainWindow(!config.has('currentInstance'));
+
+  if (!availabilityCheckerInterval) {
+    logger.info('Re-initialized availability check');
+    availabilityCheckerInterval = setInterval(availabilityCheck, 3000);
+  }
+}
+
 function showWindow() {
   if (!config.get('detachedMode')) {
     changePosition();
@@ -735,4 +752,8 @@ ipcMain.on('ha-instance', (event, url) => {
   if (currentInstance()) {
     event.reply('ha-instance', currentInstance());
   }
+});
+
+ipcMain.on('reconnect', () => {
+  reinitMainWindow();
 });

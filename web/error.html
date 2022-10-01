@@ -6,6 +6,13 @@
   <meta name="viewport" content="width=device-width,user-scalable=no"/>
   <link href="assets/style.css" rel="stylesheet"/>
   <link href="assets/error.css" rel="stylesheet"/>
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    function reconnect() {
+      ipcRenderer.send('reconnect');
+    }
+  </script>
 </head>
 
 <body>
@@ -24,6 +31,9 @@
       <p class="error">
         Home Assistant instance is not available, please check your connection.
       </p>
+    </div>
+    <div class="center">
+      <button class="pure-material-button-contained" onclick="reconnect()">Reconnect</button>
     </div>
   </div>
 </div>
