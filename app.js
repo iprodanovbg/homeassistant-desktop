@@ -382,7 +382,7 @@ function getMenu() {
       },
     },
     {
-      label: 'Reset Application...',
+      label: '⚠️ Reset Application',
       click: () => {
         dialog
           .showMessageBox({
@@ -394,11 +394,7 @@ function getMenu() {
               config.clear();
               mainWindow.webContents.session.clearCache();
               mainWindow.webContents.session.clearStorageData();
-              app.relaunch();
-              app.exit();
-            }
-
-            if (res.response === 1) {
+            } else {
               config.delete('windowSizeDetached');
               config.delete('windowSize');
               config.delete('windowPosition');
@@ -407,6 +403,9 @@ function getMenu() {
               app.relaunch();
               app.exit();
             }
+
+            app.relaunch();
+            app.exit();
           });
       },
     },
