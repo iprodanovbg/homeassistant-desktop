@@ -40,6 +40,7 @@ let forceQuit = false;
 let resizeEvent = false;
 let mainWindow;
 let tray;
+let availabilityCheckerInterval;
 
 function registerKeyboardShortcut() {
   globalShortcut.register('CommandOrControl+Alt+X', () => {
@@ -88,30 +89,34 @@ function checkAutoStart() {
     });
 }
 
-function startAvailabilityCheck() {
-  let interval;
+function availabilityCheck() {
+  const instance = currentInstance();
 
-  function availabilityCheck() {
-    const request = net.request(`${currentInstance()}/auth/providers`);
-    request.on('response', (response) => {
-      if (response.statusCode !== 200) {
-        logger.error('Error: ' + response);
-      }
-      showError(response.statusCode !== 200);
-    });
-    request.on('error', (error) => {
-      logger.error(error);
-      clearInterval(interval);
-      showError(true);
-
-      if (config.get('automaticSwitching')) {
-        checkForAvailableInstance();
-      }
-    });
-    request.end();
+  if (!instance) {
+    return;
   }
 
-  interval = setInterval(availabilityCheck, 3000);
+  const request = net.request(`${instance}/auth/providers`);
+
+  request.on('response', (response) => {
+    if (response.statusCode !== 200) {
+      logger.error('Response error: ' + response);
+      showError(true);
+    }
+  });
+
+  request.on('error', async (error) => {
+    logger.error(error);
+    clearInterval(availabilityCheckerInterval);
+    availabilityCheckerInterval = null;
+    showError(true);
+
+    if (config.get('automaticSwitching')) {
+      checkForAvailableInstance();
+    }
+  });
+
+  request.end();
 }
 
 function changePosition() {
@@ -684,7 +689,9 @@ app.whenReady().then(() => {
     tray.setContextMenu(getMenu());
   }
 
-  startAvailabilityCheck();
+  if (!availabilityCheckerInterval) {
+    availabilityCheckerInterval = setInterval(availabilityCheck, 3000);
+  }
 
   // register shortcut
   if (config.get('shortcutEnabled')) {
