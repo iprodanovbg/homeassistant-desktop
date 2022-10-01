@@ -210,6 +210,10 @@ input:focus ~ .bar:before {
   width: 320px;
 }
 
+input:not(:focus)::placeholder {
+  color: transparent;
+}
+
 label {
   color: #d5d5d5;
   font-size: 16px;
@@ -236,4 +240,28 @@ label {
   background: #03a9f4;
   transition: 300ms ease all;
   left: 0;
+}
+
+.valid-feedback {
+  display: none;
+  width: 100%;
+  margin-top: .25rem;
+  font-size: .875em;
+  color: #198754;
+}
+
+.invalid-feedback {
+  display: none;
+  width: 100%;
+  margin-top: .25rem;
+  font-size: .875em;
+  color: #dc3545;
+}
+
+.is-valid ~ .valid-feedback, :valid ~ .valid-feedback {
+  display: block;
+}
+
+.is-invalid ~ .invalid-feedback, :invalid ~ .invalid-feedback {
+  display: block;
 }

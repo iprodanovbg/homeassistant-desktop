@@ -76,11 +76,15 @@
     }
 
     function checkUrl() {
-      const url = document.getElementById('url').value;
+      const urlField = document.getElementById('url');
+      const url = urlField.value;
+      urlField.classList.remove('is-invalid', 'is-valid');
 
-      if (!isValidUrl(url)) {
+      if (!url.startsWith('http') || !isValidUrl(url)) {
+        urlField.classList.add('is-invalid');
         return;
       }
+      urlField.classList.add('is-valid');
 
       fetch(`${url}/auth/providers`)
         .then(response => response.text())
@@ -89,19 +93,13 @@
             return;
           }
 
-          document.getElementById('url').value = url;
-          document.getElementById('url').disabled = true;
+          urlField.disabled = true;
           document.getElementById('check-wrapper').style.display = 'block';
           document.getElementById('url-wrapper').style.display = 'none';
           showCheckmark = true;
           ipcRenderer.send('ha-instance', url);
         }).catch((_) => {
-        });
-    }
-
-    function showPlaceholder(status = true) {
-      if (status) document.getElementById('url').placeholder = 'e.g. http://hassio.local:8123';
-      else document.getElementById('url').placeholder = '';
+      });
     }
   </script>
 </head>
@@ -126,26 +124,24 @@
     </div>
     <div class="center">
       <div id="check-wrapper" class="success-checkmark">
-        <div class="check-icon">
+        <div class="check-icon center">
           <span class="icon-line line-tip"></span>
           <span class="icon-line line-long"></span>
           <div class="icon-circle"></div>
           <div class="icon-fix"></div>
         </div>
+        <p>
+          <small class="grey">Your URL is checked, and you will be forwarded to Home Assistant automatically.</small>
+        </p>
       </div>
+
       <div id="url-wrapper" class="group">
-        <input type="url" required="required" id="url" onblur="showPlaceholder(false)" onfocus="showPlaceholder()"
-               onkeyup="checkUrl()" />
+        <input type="url" required="required" id="url" placeholder="e.g. http://homeassistant.local:8123" onkeyup="checkUrl()" />
         <span class="highlight"></span>
         <span class="bar"></span>
         <label for="url">Home Assistant URL</label>
+        <div class="invalid-feedback">Please provide a valid url.</div>
       </div>
-    </div>
-
-    <div class="center">
-      <p>
-        <small class="grey">Your URL is checked and you will be forwarded to Home Assistant automatically.</small>
-      </p>
     </div>
   </div>
 </div>
