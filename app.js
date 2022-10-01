@@ -374,11 +374,10 @@ function getMenu() {
       type: 'separator',
     },
     {
-      label: 'Reload Window',
+      label: 'Restart Application',
       click: () => {
-        mainWindow.reload();
-        mainWindow.show();
-        mainWindow.focus();
+        app.relaunch();
+        app.exit();
       },
     },
     {
@@ -400,8 +399,6 @@ function getMenu() {
               config.delete('windowPosition');
               config.delete('fullScreen');
               config.delete('detachedMode');
-              app.relaunch();
-              app.exit();
             }
 
             app.relaunch();
