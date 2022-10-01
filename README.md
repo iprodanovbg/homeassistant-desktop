@@ -4,6 +4,8 @@ Desktop App (Windows / macOS / Linux) for [Home Assistant](https://www.home-assi
 
 ![Home Assistant - Desktop](https://raw.githubusercontent.com/iprodanovbg/homeassistant-desktop/master/media/screenshot.png)
 
+This project is fork from [mrvnklm/homeassistant-desktop](https://github.com/mrvnklm/)
+
 ## Installation
 
 Just download the latest version for your platform from the [release section](https://github.com/iprodanovbg/homeassistant-desktop/releases/latest) to install Home Assistant
@@ -18,12 +20,6 @@ Just download the latest version for your platform from the [release section](ht
 - fullscreen mode (Cmd/Ctrl + Alt + Return)
 - automatic updates (if not disabled in context menu)
 
-## Recent changes:
-
-- added fullscreen mode
-- added arm64 builds (experimental)
-- updated electron (v8 to v13) + dependencies
-
 ## Notes
 
 - if using "detached window" on Windows, instead of dragging, you have to resize it to move it
@@ -31,3 +27,20 @@ Just download the latest version for your platform from the [release section](ht
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+## License and Author
+
+Copyright 2022, [Ivan Prodanov](https://github.com/iprodanovbg)\
+Copyright 2020-2021, [Marvin Kelm](https://github.com/mrvnklm)
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
