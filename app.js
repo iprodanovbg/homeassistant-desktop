@@ -391,20 +391,22 @@ function getMenu() {
             buttons: ['Reset Everything!', 'Reset Windows', 'Cancel'],
           })
           .then((res) => {
-            if (res.response === 0) {
-              config.clear();
-              mainWindow.webContents.session.clearCache();
-              mainWindow.webContents.session.clearStorageData();
-            } else {
-              config.delete('windowSizeDetached');
-              config.delete('windowSize');
-              config.delete('windowPosition');
-              config.delete('fullScreen');
-              config.delete('detachedMode');
-            }
+            if (res.response !== 2) {
+              if (res.response === 0) {
+                config.clear();
+                mainWindow.webContents.session.clearCache();
+                mainWindow.webContents.session.clearStorageData();
+              } else {
+                config.delete('windowSizeDetached');
+                config.delete('windowSize');
+                config.delete('windowPosition');
+                config.delete('fullScreen');
+                config.delete('detachedMode');
+              }
 
-            app.relaunch();
-            app.exit();
+              app.relaunch();
+              app.exit();
+            }
           });
       },
     },
