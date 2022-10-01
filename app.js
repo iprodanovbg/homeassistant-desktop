@@ -83,6 +83,7 @@ function checkAutoStart() {
       autostartEnabled = isEnabled;
     })
     .catch((err) => {
+      logger.error('There was a problem with application auto start');
       logger.error(err);
     });
 }
@@ -421,6 +422,7 @@ function getMenu() {
 }
 
 function createMainWindow(show = false) {
+  logger.info('Initialized main window');
   mainWindow = new BrowserWindow({
     width: 420,
     height: 460,
@@ -564,6 +566,7 @@ function createTray() {
     return;
   }
 
+  logger.info('Initialized Tray menu');
   tray = new Tray(
     ['win32', 'linux'].includes(process.platform) ? `${__dirname}/assets/IconWin.png` : `${__dirname}/assets/IconTemplate.png`,
   );
@@ -704,6 +707,7 @@ app.whenReady().then(() => {
   }
 
   if (!availabilityCheckerInterval) {
+    logger.info('Initialized availability check');
     availabilityCheckerInterval = setInterval(availabilityCheck, 3000);
   }
 
