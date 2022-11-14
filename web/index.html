@@ -45,7 +45,17 @@
     })
 
     function addInstance(url) {
-      ipcRenderer.send('ha-instance', url);
+      const urlField = document.getElementById('url');
+      urlField.value = url;
+      checkUrl();
+    }
+
+    function saveInstance() {
+      const urlField = document.getElementById('url');
+      document.getElementById('check-wrapper').style.display = 'block';
+      document.getElementById('url-wrapper').style.display = 'none';
+      showCheckmark = true;
+      ipcRenderer.send('ha-instance', urlField.value);
     }
 
     ipcRenderer.send('ha-instance');
@@ -77,27 +87,34 @@
 
     function checkUrl() {
       const urlField = document.getElementById('url');
-      const url = urlField.value;
+      const submitBtn = document.getElementById('submit');
+      submitBtn.disabled = true;
+      let url = urlField.value;
       urlField.classList.remove('is-invalid', 'is-valid');
 
       if (!url.startsWith('http') || !isValidUrl(url)) {
         urlField.classList.add('is-invalid');
         return;
       }
+
+      url = new URL(url);
+
+      if (url.pathname.length > 1 && !url.pathname.startsWith('/lovelace') && !url.pathname.startsWith('/energy')) {
+        console.log(url.pathname, !url.pathname.startsWith('/lovelace'));
+        urlField.classList.add('is-invalid');
+        return;
+      }
+
       urlField.classList.add('is-valid');
 
-      fetch(`${url}/auth/providers`)
+      fetch(`${url.origin}/auth/providers`)
         .then(response => response.text())
         .then(data => {
           if (!data.includes('homeassistant')) {
             return;
           }
 
-          urlField.disabled = true;
-          document.getElementById('check-wrapper').style.display = 'block';
-          document.getElementById('url-wrapper').style.display = 'none';
-          showCheckmark = true;
-          ipcRenderer.send('ha-instance', url);
+          submitBtn.disabled = false;
         }).catch((_) => {
       });
     }
@@ -141,6 +158,7 @@
         <span class="bar"></span>
         <label for="url">Home Assistant URL</label>
         <div class="invalid-feedback">Please provide a valid url.</div>
+        <button class="pure-material-button-contained" id="submit" onclick="saveInstance()" disabled>Submit</button>
       </div>
     </div>
   </div>

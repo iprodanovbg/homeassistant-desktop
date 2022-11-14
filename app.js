@@ -95,7 +95,8 @@ function availabilityCheck() {
     return;
   }
 
-  const request = net.request(`${instance}/auth/providers`);
+  let url = new URL(instance);
+  const request = net.request(`${url.origin}/auth/providers`);
 
   request.on('response', (response) => {
     if (response.statusCode !== 200) {
@@ -175,7 +176,8 @@ function checkForAvailableInstance() {
     });
     let found;
     for (let instance of instances.filter((e) => e.url !== currentInstance())) {
-      const request = net.request(`${instance}/auth/providers`);
+      const url = new URL(instance);
+      const request = net.request(`${url.origin}/auth/providers`);
       request.on('response', (response) => {
         if (response.statusCode === 200) {
           found = instance;
