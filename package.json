@@ -4,7 +4,7 @@
     "type": "git",
     "url": "https://github.com/iprodanovbg/homeassistant-desktop"
   },
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Desktop App (Windows / macOS / Linux) for Home Assistant built with Electron",
   "author": "Ivan Prodanov",
   "license": "Apache-2.0",
