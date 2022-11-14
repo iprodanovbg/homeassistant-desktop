@@ -12,6 +12,10 @@
     function reconnect() {
       ipcRenderer.send('reconnect');
     }
+
+    function restart() {
+      ipcRenderer.send('restart');
+    }
   </script>
 </head>
 
@@ -34,6 +38,7 @@
     </div>
     <div class="center">
       <button class="pure-material-button-contained" onclick="reconnect()">Reconnect</button>
+      <button class="pure-material-button-contained" onclick="restart()" style="margin-left: 10px">Restart</button>
     </div>
   </div>
 </div>

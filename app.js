@@ -764,3 +764,8 @@ ipcMain.on('ha-instance', (event, url) => {
 ipcMain.on('reconnect', () => {
   reinitMainWindow();
 });
+
+ipcMain.on('restart', () => {
+  app.relaunch();
+  app.exit();
+});
