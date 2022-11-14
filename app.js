@@ -433,7 +433,7 @@ function createMainWindow(show = false) {
     show: false,
     skipTaskbar: !show,
     autoHideMenuBar: true,
-    frame: false,
+    frame: config.get('detachedMode') && process.platform !== 'darwin',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
