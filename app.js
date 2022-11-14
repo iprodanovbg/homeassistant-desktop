@@ -446,9 +446,9 @@ function createMainWindow(show = false) {
   createTray();
 
   // open external links in default browser
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
-    return { action: 'deny' };
+  mainWindow.webContents.on("new-window", function (e, url) {
+    e.preventDefault();
+    shell.openExternal(url).catch((err) => logger.error(err));
   });
 
   // hide scrollbar
