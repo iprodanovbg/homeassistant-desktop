@@ -17,7 +17,6 @@ const Bonjour = require('bonjour-service');
 const bonjour = new Bonjour.Bonjour();
 const logger = require('electron-log');
 const config = require('./config');
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 autoUpdater.logger = logger;
 logger.catchErrors();
@@ -34,6 +33,7 @@ const autoLauncher = new AutoLaunch({ name: 'Home Assistant Desktop' });
 const indexFile = `file://${__dirname}/web/index.html`;
 const errorFile = `file://${__dirname}/web/error.html`;
 
+let initialized = false;
 let autostartEnabled = false;
 let forceQuit = false;
 let resizeEvent = false;
@@ -530,11 +530,13 @@ function createMainWindow(show = false) {
 
   mainWindow.setAlwaysOnTop(!!config.get('stayOnTop'));
 
-  if (mainWindow.isAlwaysOnTop() || show) {
+  if (initialized && (mainWindow.isAlwaysOnTop() || show)) {
     showWindow();
   }
 
   toggleFullScreen(!!config.get('fullScreen'));
+
+  initialized = true;
 }
 
 function reinitMainWindow() {
