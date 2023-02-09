@@ -17,8 +17,13 @@ const Bonjour = require('bonjour-service');
 const bonjour = new Bonjour.Bonjour();
 const logger = require('electron-log');
 const config = require('./config');
+const updateUrl = `https://update.iprodanov.com/files`;
 
 autoUpdater.logger = logger;
+autoUpdater.setFeedURL({
+  provider: 'generic',
+  url: updateUrl,
+});
 logger.catchErrors();
 logger.info(`${app.name} started`);
 logger.info(`Platform: ${process.platform} ${process.arch}`);
@@ -56,10 +61,11 @@ function unregisterKeyboardShortcut() {
   globalShortcut.unregisterAll();
 }
 
-function useAutoUpdater() {
-  autoUpdater.on('error', (message) => {
+async function useAutoUpdater() {
+  autoUpdater.on('error', async (message) => {
     logger.error('There was a problem updating the application');
     logger.error(message);
+    clearInterval(updateCheckerInterval);
   });
 
   autoUpdater.on('update-downloaded', () => {
@@ -68,11 +74,18 @@ function useAutoUpdater() {
   });
 
   if (!updateCheckerInterval && config.get('autoUpdate')) {
-    updateCheckerInterval = setInterval(() => {
-      autoUpdater.checkForUpdates();
-    }, 1000 * 60 * 60 * 4);
+    updateCheckerInterval = setInterval(checkForUpdates, 1000 * 60 * 60 * 4);
+  }
 
-    autoUpdater.checkForUpdates();
+  await checkForUpdates();
+}
+
+async function checkForUpdates() {
+  try {
+    await autoUpdater.checkForUpdates();
+  } catch (error) {
+    logger.error(error);
+    clearInterval(updateCheckerInterval);
   }
 }
 
@@ -98,10 +111,10 @@ function availabilityCheck() {
   let url = new URL(instance);
   const request = net.request(`${url.origin}/auth/providers`);
 
-  request.on('response', (response) => {
+  request.on('response', async (response) => {
     if (response.statusCode !== 200) {
       logger.error('Response error: ' + response);
-      showError(true);
+      await showError(true);
     }
   });
 
@@ -109,7 +122,7 @@ function availabilityCheck() {
     logger.error(error);
     clearInterval(availabilityCheckerInterval);
     availabilityCheckerInterval = null;
-    showError(true);
+    await showError(true);
 
     if (config.get('automaticSwitching')) {
       checkForAvailableInstance();
@@ -200,8 +213,8 @@ function getMenu() {
     {
       label: 'Open in Browser',
       enabled: currentInstance(),
-      click: () => {
-        shell.openExternal(currentInstance());
+      click: async () => {
+        await shell.openExternal(currentInstance());
       },
     },
     {
@@ -217,9 +230,9 @@ function getMenu() {
         label: e,
         type: 'checkbox',
         checked: currentInstance() === e,
-        click: () => {
+        click: async () => {
           currentInstance(e);
-          mainWindow.loadURL(e);
+          await mainWindow.loadURL(e);
           mainWindow.show();
         },
       });
@@ -231,9 +244,9 @@ function getMenu() {
       },
       {
         label: 'Add another Instance...',
-        click: () => {
+        click: async () => {
           config.delete('currentInstance');
-          mainWindow.loadURL(indexFile);
+          await mainWindow.loadURL(indexFile);
           mainWindow.show();
         },
       },
@@ -330,10 +343,10 @@ function getMenu() {
       label: 'Use detached Window',
       type: 'checkbox',
       checked: config.get('detachedMode'),
-      click: () => {
+      click: async () => {
         config.set('detachedMode', !config.get('detachedMode'));
         mainWindow.hide();
-        createMainWindow(config.get('detachedMode'));
+        await createMainWindow(config.get('detachedMode'));
       },
     },
     {
@@ -356,7 +369,7 @@ function getMenu() {
       label: 'Automatic Updates',
       type: 'checkbox',
       checked: config.get('autoUpdate'),
-      click: () => {
+      click: async () => {
         const currentStatus = config.get('autoUpdate');
         config.set('autoUpdate', !currentStatus);
 
@@ -364,14 +377,14 @@ function getMenu() {
           clearInterval(updateCheckerInterval);
           updateCheckerInterval = null;
         } else {
-          useAutoUpdater();
+          await useAutoUpdater();
         }
       },
     },
     {
       label: 'Open on github.com',
-      click: () => {
-        shell.openExternal('https://github.com/iprodanovbg/homeassistant-desktop');
+      click: async () => {
+        await shell.openExternal('https://github.com/iprodanovbg/homeassistant-desktop');
       },
     },
     {
@@ -392,12 +405,12 @@ function getMenu() {
             message: 'Are you sure you want to reset Home Assistant Desktop?',
             buttons: ['Reset Everything!', 'Reset Windows', 'Cancel'],
           })
-          .then((res) => {
+          .then(async (res) => {
             if (res.response !== 2) {
               if (res.response === 0) {
                 config.clear();
-                mainWindow.webContents.session.clearCache();
-                mainWindow.webContents.session.clearStorageData();
+                await mainWindow.webContents.session.clearCache();
+                await mainWindow.webContents.session.clearStorageData();
               } else {
                 config.delete('windowSizeDetached');
                 config.delete('windowSize');
@@ -425,7 +438,7 @@ function getMenu() {
   ]);
 }
 
-function createMainWindow(show = false) {
+async function createMainWindow(show = false) {
   logger.info('Initialized main window');
   mainWindow = new BrowserWindow({
     width: 420,
@@ -443,22 +456,22 @@ function createMainWindow(show = false) {
   });
 
   // mainWindow.webContents.openDevTools();
-  mainWindow.loadURL(indexFile);
+  await mainWindow.loadURL(indexFile);
 
   createTray();
 
   // open external links in default browser
-  mainWindow.webContents.on("new-window", function (e, url) {
-    e.preventDefault();
-    shell.openExternal(url).catch((err) => logger.error(err));
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
   });
 
   // hide scrollbar
-  mainWindow.webContents.on('did-finish-load', function () {
-    mainWindow.webContents.insertCSS('::-webkit-scrollbar { display: none; } body { -webkit-user-select: none; }');
+  mainWindow.webContents.on('did-finish-load', async function () {
+    await mainWindow.webContents.insertCSS('::-webkit-scrollbar { display: none; } body { -webkit-user-select: none; }');
 
     if (config.get('detachedMode') && process.platform === 'darwin') {
-      mainWindow.webContents.insertCSS('body { -webkit-app-region: drag; }');
+      await mainWindow.webContents.insertCSS('body { -webkit-app-region: drag; }');
     }
 
     // let code = `document.addEventListener('mousemove', () => { ipcRenderer.send('mousemove'); });`;
@@ -541,11 +554,11 @@ function createMainWindow(show = false) {
   initialized = true;
 }
 
-function reinitMainWindow() {
+async function reinitMainWindow() {
   logger.info('Re-initialized main window');
   mainWindow.destroy();
   mainWindow = null;
-  createMainWindow(!config.has('currentInstance'));
+  await createMainWindow(!config.has('currentInstance'));
 
   if (!availabilityCheckerInterval) {
     logger.info('Re-initialized availability check');
@@ -692,21 +705,21 @@ function addInstance(url) {
   currentInstance(url);
 }
 
-function showError(isError) {
+async function showError(isError) {
   if (!isError && mainWindow.webContents.getURL().includes('error.html')) {
-    mainWindow.loadURL(indexFile);
+    await mainWindow.loadURL(indexFile);
   }
 
   if (isError && currentInstance() && !mainWindow.webContents.getURL().includes('error.html')) {
-    mainWindow.loadURL(errorFile);
+    await mainWindow.loadURL(errorFile);
   }
 }
 
-app.whenReady().then(() => {
-  useAutoUpdater();
+app.whenReady().then(async () => {
+  await useAutoUpdater();
   checkAutoStart();
 
-  createMainWindow(!config.has('currentInstance'));
+  await createMainWindow(!config.has('currentInstance'));
 
   if (process.platform === 'linux') {
     tray.setContextMenu(getMenu());
@@ -761,8 +774,8 @@ ipcMain.on('ha-instance', (event, url) => {
   }
 });
 
-ipcMain.on('reconnect', () => {
-  reinitMainWindow();
+ipcMain.on('reconnect', async () => {
+  await reinitMainWindow();
 });
 
 ipcMain.on('restart', () => {
