@@ -456,7 +456,11 @@ async function createMainWindow(show = false) {
   });
 
   // mainWindow.webContents.openDevTools();
-  await mainWindow.loadURL(indexFile);
+  try {
+    await mainWindow.loadURL(indexFile);
+  } catch (error) {
+    logger.info(error);
+  }
 
   createTray();
 
@@ -755,9 +759,9 @@ app.on('will-quit', () => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  // if (process.platform !== 'darwin') {
+  //   app.quit();
+  // }
 });
 
 ipcMain.on('get-instances', (event) => {
