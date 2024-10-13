@@ -350,16 +350,32 @@ function getMenu() {
       },
     },
     {
-      label: 'Use Fullscreen',
-      type: 'checkbox',
-      checked: config.get('fullScreen'),
-      accelerator: 'CommandOrControl+Alt+Return',
+      label: "Use Fullscreen",
+      type: "checkbox",
+      checked: config.get("fullScreen"),
       click: () => {
         toggleFullScreen();
       },
     },
     {
-      type: 'separator',
+      label: "Enable Fullscreen Shortcut",
+      type: "checkbox",
+      accelerator: "CommandOrControl+Alt+Return",
+      checked: config.get("shortcutFullscreenEnabled"),
+      click: () => {
+        const isEnabled = config.get("shortcutFullscreenEnabled");
+        config.set("shortcutFullscreenEnabled", !isEnabled);
+        if (!isEnabled) {
+          globalShortcut.register("CommandOrControl+Alt+Return", () => {
+            toggleFullScreen();
+          });
+        } else {
+          globalShortcut.unregister("CommandOrControl+Alt+Return");
+        }
+      },
+    },
+    {
+      type: "separator",
     },
     {
       label: `v${app.getVersion()}`,
@@ -456,7 +472,11 @@ async function createMainWindow(show = false) {
   });
 
   // mainWindow.webContents.openDevTools();
-  await mainWindow.loadURL(indexFile);
+  try {
+    await mainWindow.loadURL(indexFile);
+  } catch (error) {
+    logger.info(error);
+  }
 
   createTray();
 
@@ -735,9 +755,11 @@ app.whenReady().then(async () => {
     registerKeyboardShortcut();
   }
 
-  globalShortcut.register('CommandOrControl+Alt+Return', () => {
-    toggleFullScreen();
-  });
+  if (config.get("shortcutFullscreenEnabled")) {
+    globalShortcut.register("CommandOrControl+Alt+Return", () => {
+      toggleFullScreen();
+    });
+  }
 
   // disable hover for first start
   if (!config.has('currentInstance')) {
@@ -754,10 +776,10 @@ app.on('will-quit', () => {
   unregisterKeyboardShortcut();
 });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+app.on("window-all-closed", () => {
+  // if (process.platform !== "darwin") {
+  //   app.quit();
+  // }
 });
 
 ipcMain.on('get-instances', (event) => {
